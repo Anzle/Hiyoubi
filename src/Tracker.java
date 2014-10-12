@@ -6,6 +6,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
@@ -20,6 +21,7 @@ public class Tracker {
 	TorrentInfo torrentInfo;
 	private final char[] HEXCHARS = "0123456789ABCDEF".toCharArray();
 	private String peer_id;
+	private byte[] info_hash;
 
 	public Tracker(TorrentInfo torrentInfo) {
 		this.torrentInfo = torrentInfo;
@@ -32,8 +34,13 @@ public class Tracker {
 			e.printStackTrace();
 		}
 		*/
+		
 	}
 
+	/**
+	 * Perform the HTTP Get Request from the Torrent
+	 * @return String response
+	 * 		The responce from the HTTP Server*/
 	private String queryServer() throws IOException {
 
 		String ih_str = "";
@@ -44,7 +51,10 @@ public class Tracker {
 						+ this.HEXCHARS[info_hash[i] & 0x0F];
 		}
 
-		//System.out.println("ih: " + ih_str);
+		System.out.println("ih: " + ih_str);
+		
+		/*Save the info hash for later usage as an array of bytes*/
+		infoHashtoByte(ih_str);
 		
 		StringBuilder sb = new StringBuilder();
 		Random random = new Random();
@@ -80,6 +90,10 @@ public class Tracker {
 		return response.toString();
 	}
 
+	/**
+	 * Generate a list of peers that the client can attempt to connect to
+	 * @return an Array List of Peers*/
+	
 	public ArrayList<Peer> getPeers() {
 		String response = "";
 		try {
@@ -161,5 +175,31 @@ public class Tracker {
 
 		return peers;
 
+	}
+	
+	/** @return the SHA1 Info Hash*/
+	public byte[] getInfoHash(){return info_hash;}
+	
+	/**return a byte[] of the peerId we got*/
+	public byte[] getPeerId(){return this.peer_id.getBytes();}
+	
+	/*Convert the info hash string into an info hash byte[] 
+	 * @param ih_str is the info Hash String that is obtained 
+	 * from the HTTP Get request*/
+	private void infoHashtoByte(String ih_str) {
+		this.info_hash = ih_str.getBytes();
+		/*
+		byte[] hash = new byte[20];
+		
+		String[] hashStr = ih_str.split("%");
+		//Convert the ih_str into a raw byte[] ie, no %s
+		for(int i=0; i<hashStr.length-1;i++){
+			byte[] tmp = hashStr[i+1].getBytes(Charset.forName("UTF-8"));
+				hash[i] = tmp[0];
+				//System.out.print(hash[i] + " ");
+		}
+		
+		this.info_hash = hash;
+		*/
 	}
 }
