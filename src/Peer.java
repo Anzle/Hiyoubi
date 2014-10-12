@@ -33,8 +33,6 @@ public class Peer {
 			from_peer = new DataInputStream(socket.getInputStream());
 			to_peer = new DataOutputStream(socket.getOutputStream());
 			
-			if(socket == null || from_peer==null||to_peer == null)
-				System.err.println("Unable to peoperly set up socket. AKA: Your host is gone");
 		} catch (UnknownHostException e) {
 			System.err.println(e.getMessage() + "AKA: Your host is gone");
 			return false;
@@ -44,15 +42,8 @@ public class Peer {
 			return false;
 		}
 		//handshake with the peer
-	
-			try {
-				handshake();
-			} catch (Throwable e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				return false;
-			}
-		
+		if(!handshake())
+			System.err.println("The handshake with: " + ip + " failed.");
 		//if both are good return true
 		return true;
 	}
@@ -63,18 +54,23 @@ public class Peer {
 		
 	}
 	
-	public boolean handshake() throws Throwable{
+	/** 
+	 * Perform the Handshake with the Peer
+	 * The method creates the handshake to be sent, then
+	 * recieves a responce from the peer, validates it and returns. 
+	 * */
+	public boolean handshake(){
 		byte[] shake = Message.handshake(tracker.getPeerId(), tracker.getInfoHash());
-		byte[] responce = new byte[68];
+		byte[] responce;
 		if(sendMessage(shake))
-			from_peer.readFully(responce);
+			responce = recieveMessage();
 		else
 			return false;
 		
 		if(responce == null)
 			return false;
-		
-		return true;
+
+		return Message.validateHandshake(responce, shake, id.getBytes());
 	}
 	
 	/**
@@ -101,8 +97,8 @@ public class Peer {
 		try {
 			this.from_peer.readFully(responce);
 		} catch (IOException e) {
-			System.err.println("Error reading messagefrom peer located at: " + ip);
-			return null;
+			//http://docs.oracle.com/javase/tutorial/essential/io/datastreams.html
+			//We will do nothing with this! The EOF is how it knows to stop
 		}
 		return responce;
 		

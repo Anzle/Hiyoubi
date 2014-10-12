@@ -51,10 +51,10 @@ public class Tracker {
 						+ this.HEXCHARS[info_hash[i] & 0x0F];
 		}
 
-		System.out.println("ih: " + ih_str);
+		//System.out.println("info hash: " + ih_str);
 		
 		/*Save the info hash for later usage as an array of bytes*/
-		infoHashtoByte(ih_str);
+		this.info_hash = this.torrentInfo.info_hash.array();
 		
 		StringBuilder sb = new StringBuilder();
 		Random random = new Random();
@@ -182,24 +182,5 @@ public class Tracker {
 	
 	/**return a byte[] of the peerId we got*/
 	public byte[] getPeerId(){return this.peer_id.getBytes();}
-	
-	/*Convert the info hash string into an info hash byte[] 
-	 * @param ih_str is the info Hash String that is obtained 
-	 * from the HTTP Get request*/
-	private void infoHashtoByte(String ih_str) {
-		this.info_hash = ih_str.getBytes();
-		/*
-		byte[] hash = new byte[20];
-		
-		String[] hashStr = ih_str.split("%");
-		//Convert the ih_str into a raw byte[] ie, no %s
-		for(int i=0; i<hashStr.length-1;i++){
-			byte[] tmp = hashStr[i+1].getBytes(Charset.forName("UTF-8"));
-				hash[i] = tmp[0];
-				//System.out.print(hash[i] + " ");
-		}
-		
-		this.info_hash = hash;
-		*/
-	}
+
 }

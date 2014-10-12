@@ -79,7 +79,7 @@ public class RUBTClient {
 				}
 				System.out.println("no good peers");
 			}
-			
+			System.out.println("We have connection to peer: " + peer.ip);
 			peer.download();
 			
 		} catch (FileNotFoundException e)
