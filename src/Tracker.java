@@ -8,53 +8,58 @@ import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Random;
 
 import GivenTools.Bencoder2;
 import GivenTools.BencodingException;
+import GivenTools.ToolKit;
 import GivenTools.TorrentInfo;
 
 public class Tracker {
 
 	TorrentInfo torrentInfo;
 	private final char[] HEXCHARS = "0123456789ABCDEF".toCharArray();
+	private String peer_id;
 
 	public Tracker(TorrentInfo torrentInfo) {
 		this.torrentInfo = torrentInfo;
+		/*
+		try {
+			ByteBuffer bytes = Bencoder2.getInfoBytes(torrentInfo.torrent_file_bytes);
+			System.out.println(new String(bytes.array()));
+		} catch (BencodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		*/
 	}
 
 	private String queryServer() throws IOException {
 
 		String ih_str = "";
 		byte[] info_hash = this.torrentInfo.info_hash.array();
-
 		for (int i = 0; i < info_hash.length; i++) {
-			if ((info_hash[i] & 0x80) == 0x80) { // if the byte data has the
-													// most
-													// significant byte set
-													// (e.g. it
-													// is negative)
+			
 				ih_str += "%" + this.HEXCHARS[(info_hash[i] & 0xF0) >>> 4]
 						+ this.HEXCHARS[info_hash[i] & 0x0F];
-			} else {
-				try { // If the byte is a valid ascii character, use URLEncoder
-					ih_str += URLEncoder.encode(new String(
-							new byte[] { info_hash[i] }), "UTF-8");
-				} catch (UnsupportedEncodingException e) {
-					System.out.println("URL formation error:" + e.getMessage());
-				}
-			}
 		}
 
-		// String query = "announce?info_hash=" + ih_str + "&peer_id=" +
-		// host.getPeerID() + "&port=" + host.getPort() + "&left=" +
-		// torinfo.file_length + "&uploaded=0&downloaded=0";
+		System.out.println("ih: " + ih_str);
+		
+		StringBuilder sb = new StringBuilder();
+		Random random = new Random();
+		for (int i = 0; i < 20; i++) {
+		    char c = this.HEXCHARS[random.nextInt(this.HEXCHARS.length)];
+		    sb.append(c);
+		}
+		this.peer_id = sb.toString();
 
-		String query = "";
+		// String query = "announce?info_hash=" + ih_str + "&peer_id=" + host.getPeerID() + "&port=" + host.getPort() + "&left=" + torinfo.file_length + "&uploaded=0&downloaded=0";
+
+		String query = "announce?info_hash=" + ih_str + "&peer_id=" + this.peer_id + "&port=6881&left=" + this.torrentInfo.file_length + "&uploaded=0&downloaded=0";
 
 		URL urlobj;
-
-		byte[] tracker_response = null;
-
+		
 		urlobj = new URL(this.torrentInfo.announce_url, query);
 		HttpURLConnection uconnect = (HttpURLConnection) urlobj
 				.openConnection();
@@ -68,9 +73,6 @@ public class Tracker {
 		String inline = "";
 		while ((inline = in.readLine()) != null) {
 
-			tracker_response = inline.getBytes();
-
-			// System.out.println(inline);// prints stuff
 			response.append(inline);
 
 		}
@@ -83,7 +85,7 @@ public class Tracker {
 		try {
 			response = queryServer();
 		} catch (IOException e) {
-			System.err.print(e.getMessage());
+			System.err.println(e.getMessage());
 			return null;
 		}
 		HashMap results = null;
@@ -94,12 +96,16 @@ public class Tracker {
 				results = (HashMap) o;
 			}
 		} catch (BencodingException e) {
-			System.err.print(e.getMessage());
+			System.err.println(e.getMessage());
 			return null;
 		}
 
-		if (results == null)
+		if (results == null){
+			System.err.println("Results is null");
 			return null;
+		}
+		
+		ToolKit.printMap(results, 2);
 
 		ByteBuffer b = ByteBuffer.wrap("peers".getBytes());
 
@@ -109,13 +115,18 @@ public class Tracker {
 
 		Object peer_list_o = results.get(b);
 
-		if (!(peer_list_o instanceof ArrayList)) {
+		if (peer_list_o == null){
+			System.err.println("peer_list_o is null");
+			return null;
+		}else if (!(peer_list_o instanceof ArrayList)) {
+			System.err.println("No Results");
 			return null;
 		}
 
-		ArrayList peer_list = (ArrayList) peer_list_o;
-
-		for (Object peer_info_o : peer_list[1]) {
+		ArrayList peer_list = (ArrayList) ((Object[]) peer_list_o)[1];
+		
+		ArrayList<Peer> peers = new ArrayList<Peer>();
+		for (Object peer_info_o : peer_list) {
 
 			if (!(peer_info_o instanceof HashMap)) {
 				continue;
@@ -124,12 +135,30 @@ public class Tracker {
 			HashMap peer_info = (HashMap) peer_info_o;
 
 			Object port_o = peer_info.get(peer_port_key);
-			Object ip_o = peer_info.get(peer_port_key);
-			Object id_o = peer_info.get(peer_port_key);
+			Object ip_o = peer_info.get(peer_ip_key);
+			Object id_o = peer_info.get(peer_id_key);
 
+			if(port_o == null || !(port_o instanceof ByteBuffer)){
+				continue;
+			}
+			if(ip_o == null || !(ip_o instanceof ByteBuffer)){
+				continue;
+			}
+			if(id_o == null || !(id_o instanceof ByteBuffer)){
+				continue;
+			}
+			
+			int port = (Integer) port_o;
+			String ip = ((ByteBuffer) ip_o).toString();
+			String id = ((ByteBuffer) id_o).toString();
+			
+			System.out.println("id = " + id + " | ip = " + ip + " | port = " + port);
+			
+			Peer p = new Peer(id, ip, port, this);
+			peers.add(p);
 		}
 
-		return null;
+		return peers;
 
 	}
 }

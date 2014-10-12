@@ -3,6 +3,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 
 import GivenTools.BencodingException;
 import GivenTools.TorrentInfo;
@@ -49,9 +50,20 @@ public class RUBTClient {
 
 			fstream.close();
 			TorrentInfo torInfo = new TorrentInfo(tbytes);
-			
+			System.out.println("Init tracker...");
 			Tracker tracker = new Tracker(torInfo);
-
+			System.out.println("Getting peers...");
+			ArrayList<Peer> peers = tracker.getPeers();
+			
+			if(peers == null){
+				System.err.println("Error retrieving peers!");
+				return;			
+			}
+			
+			
+			
+			
+			
 		} catch (FileNotFoundException e)
 		{
 			System.err.println(e.getMessage());
