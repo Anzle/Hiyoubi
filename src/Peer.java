@@ -6,4 +6,19 @@ public class Peer {
 	}
 
 	byte[] handshake_header;
+
+	public boolean connect() {
+		//connect
+		
+		//handshake
+		
+		//if both are good return true
+		return false;
+	}
+
+	public void download() {
+		
+		//download the file
+		
+	}
 }

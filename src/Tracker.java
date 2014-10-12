@@ -44,7 +44,7 @@ public class Tracker {
 						+ this.HEXCHARS[info_hash[i] & 0x0F];
 		}
 
-		System.out.println("ih: " + ih_str);
+		//System.out.println("ih: " + ih_str);
 		
 		StringBuilder sb = new StringBuilder();
 		Random random = new Random();
@@ -105,13 +105,12 @@ public class Tracker {
 			return null;
 		}
 		
-		ToolKit.printMap(results, 2);
 
 		ByteBuffer b = ByteBuffer.wrap("peers".getBytes());
 
 		ByteBuffer peer_ip_key = ByteBuffer.wrap("ip".getBytes());
 		ByteBuffer peer_port_key = ByteBuffer.wrap("port".getBytes());
-		ByteBuffer peer_id_key = ByteBuffer.wrap("id".getBytes());
+		ByteBuffer peer_id_key = ByteBuffer.wrap("peer id".getBytes());
 
 		Object peer_list_o = results.get(b);
 
@@ -123,7 +122,7 @@ public class Tracker {
 			return null;
 		}
 
-		ArrayList peer_list = (ArrayList) ((Object[]) peer_list_o)[1];
+		ArrayList peer_list = (ArrayList) peer_list_o;
 		
 		ArrayList<Peer> peers = new ArrayList<Peer>();
 		for (Object peer_info_o : peer_list) {
@@ -138,21 +137,23 @@ public class Tracker {
 			Object ip_o = peer_info.get(peer_ip_key);
 			Object id_o = peer_info.get(peer_id_key);
 
-			if(port_o == null || !(port_o instanceof ByteBuffer)){
+			if(port_o == null || !(port_o instanceof Integer)){
+				System.err.println("Bad port");
 				continue;
 			}
 			if(ip_o == null || !(ip_o instanceof ByteBuffer)){
+				System.err.println("Bad ip");
 				continue;
 			}
 			if(id_o == null || !(id_o instanceof ByteBuffer)){
+				System.err.println("Bad id");
 				continue;
 			}
 			
 			int port = (Integer) port_o;
-			String ip = ((ByteBuffer) ip_o).toString();
-			String id = ((ByteBuffer) id_o).toString();
+			String ip = new String(((ByteBuffer) ip_o).array());
+			String id = new String(((ByteBuffer) id_o).array());
 			
-			System.out.println("id = " + id + " | ip = " + ip + " | port = " + port);
 			
 			Peer p = new Peer(id, ip, port, this);
 			peers.add(p);

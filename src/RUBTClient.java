@@ -52,17 +52,35 @@ public class RUBTClient {
 			TorrentInfo torInfo = new TorrentInfo(tbytes);
 			System.out.println("Init tracker...");
 			Tracker tracker = new Tracker(torInfo);
-			System.out.println("Getting peers...");
-			ArrayList<Peer> peers = tracker.getPeers();
 			
-			if(peers == null){
-				System.err.println("Error retrieving peers!");
-				return;			
+			Peer peer = null;
+			
+			while(true){
+				System.out.println("Getting new peers...");
+				ArrayList<Peer> peers = tracker.getPeers();
+				
+				if(peers == null){
+					System.err.println("Error retrieving peers!");
+					return;			
+				}
+				
+				System.out.println("num peers is " + peers.size());
+				
+				for(Peer p : peers){
+					if(p.connect()){
+						peer = p;
+						break;
+					}
+					
+				}
+				
+				if(peer != null){
+					break;
+				}
+				System.out.println("no good peers");
 			}
 			
-			
-			
-			
+			peer.download();
 			
 		} catch (FileNotFoundException e)
 		{
