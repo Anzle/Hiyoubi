@@ -1,3 +1,5 @@
+import java.nio.ByteBuffer;
+
 
 public class Message {
 
@@ -97,6 +99,27 @@ public class Message {
 		}
 		//All checks out good!
 		return true;
+	}
+
+	public static byte[] blockRequestBuilder(int index, int offset, int blen) {
+		ByteBuffer msg = ByteBuffer.allocate(17);
+		
+		msg.putInt(13);
+		msg.put((byte) 6);
+		msg.putInt(index);
+		msg.putInt(offset);
+		msg.putInt(blen);
+		
+		return msg.array();
+	}
+
+	public static byte[] interested() {
+		ByteBuffer msg = ByteBuffer.allocate(17);
+		
+		msg.putInt(1);
+		msg.put((byte) 2);
+		
+		return msg.array();
 	}
 	
 }
