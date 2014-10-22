@@ -5,6 +5,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 
 
 public class Peer {
@@ -17,6 +18,17 @@ public class Peer {
 	DataInputStream from_peer;
 	DataOutputStream to_peer;
 	Tracker tracker;
+	private boolean peer_choking = false;
+	private boolean peer_interested = false;
+	private boolean am_choking = false;
+	private boolean am_interested = false;
+	
+	boolean[] bitfield;
+	boolean[] retrieved;
+	
+	ArrayList<Piece> pieces;
+	private int currentPieceIndex = -1;
+	private int currentPieceOffset = -1;
 	
 	public Peer(String id, String ip, int port, Tracker tracker) {
 		// TODO Auto-generated constructor stub
@@ -24,6 +36,8 @@ public class Peer {
 		this.ip = ip;
 		this.port = port;
 		this.tracker = tracker;
+		this.bitfield = new boolean[this.tracker.torrentInfo.piece_hashes.length];
+		this.retrieved = new boolean[this.tracker.torrentInfo.piece_hashes.length];
 	}
 
 	public boolean connect(){
@@ -49,15 +63,100 @@ public class Peer {
 	}
 
 	public void download() {
-		
-		//download the file
+		try {
+			while(this.socket.isConnected()){
+				int len = this.from_peer.readInt();
+				if(len > 0){
+					byte id = this.from_peer.readByte();
+					switch(id){
+						case (byte) 0: //choke
+							this.peer_choking = true;
+							break;
+						case (byte) 1: //unchoke
+							this.peer_choking = false;
+							requestNextPiece();
+							break;
+						case (byte) 2: //interested
+							this.peer_interested = true;
+							break;
+						case (byte) 3: //not interested
+							this.peer_interested = false;
+							break;
+						case (byte) 4: //have
+							int piece = this.from_peer.readInt();
+							if(piece >= 0 && piece < bitfield.length)
+							bitfield[piece] = true;
+							break;
+						case (byte) 5: //bit field
+							boolean[] payload = new boolean[this.tracker.torrentInfo.piece_hashes.length];
+							for(int i = 0; i < payload.length; i++){
+								payload[i] = this.from_peer.readBoolean();
+							}
+							this.bitfield = payload;
+							break;
+						case (byte) 6: //request
+							int rindex = this.from_peer.readInt();
+							int rbegin = this.from_peer.readInt();
+							int rlength = this.from_peer.readInt();
+							//Not required for phase 1, but we need to clear the buffer
+							break;
+						case (byte) 7: //piece
+							int payloadLen = len - 8;
+							int bindex = this.from_peer.readInt();
+							int boffset = this.from_peer.readInt();
+							byte[] data = new byte[payloadLen];
+							this.from_peer.readFully(data);
+							{
+								Piece p = this.pieces.get(bindex);
+								if(p != null){
+									p.savePiece(boffset, data);
+									requestNextPiece();
+								}
+							}
+							break;
+						case (byte) 8: //cancel
+							int cindex = this.from_peer.readInt();
+							int cbegin = this.from_peer.readInt();
+							int clength = this.from_peer.readInt();
+							//Not required for phase 1, but we need to clear the buffer
+							break;
+						default:
+							break;
+					}
+				}
+			}
+			socket.close();
+		} catch (IOException e) {
+			System.err.println("Client " + this.ip + ":" + this.port + " disconnected. " + e.getMessage());
+		}
+	}
+	
+	private void requestNextBlock() {
 		
 	}
 	
+	private void requestNextPiece() throws IOException {
+		if(this.bitfield != null && this.retrieved != null){
+			if(this.bitfield.length != this.retrieved.length){
+				System.err.println("Block lengths with peer " + this.ip + ":" + this.port + " differ. Closing connection.");
+				this.socket.close();
+				return;
+			}
+			
+			for(int i = 0; i < bitfield.length; i++){
+				if(bitfield[i] && !this.retrieved[i]){
+					//TODO request piece i
+					return;
+				}
+			}
+			//no blocks left;
+		}
+	}
+
 	/** 
 	 * Perform the Handshake with the Peer
 	 * The method creates the handshake to be sent, then
-	 * recieves a responce from the peer, validates it and returns. 
+	 * Receives a response from the peer, validates it and returns. 
 	 * */
 	public boolean handshake(){
 		byte[] shake = Message.handshake(tracker.getPeerId(), tracker.getInfoHash());

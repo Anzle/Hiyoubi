@@ -67,7 +67,6 @@ public class Tracker {
 		// String query = "announce?info_hash=" + ih_str + "&peer_id=" + host.getPeerID() + "&port=" + host.getPort() + "&left=" + torinfo.file_length + "&uploaded=0&downloaded=0";
 
 		String query = "announce?info_hash=" + ih_str + "&peer_id=" + this.peer_id + "&port=6881&left=" + this.torrentInfo.file_length + "&uploaded=0&downloaded=0";
-
 		URL urlobj;
 		
 		urlobj = new URL(this.torrentInfo.announce_url, query);
@@ -86,7 +85,6 @@ public class Tracker {
 			response.append(inline);
 
 		}
-
 		return response.toString();
 	}
 
@@ -105,7 +103,7 @@ public class Tracker {
 		HashMap results = null;
 		try {
 			Object o = Bencoder2.decode(response.getBytes());
-
+			
 			if (o instanceof HashMap) {
 				results = (HashMap) o;
 			}
@@ -118,7 +116,6 @@ public class Tracker {
 			System.err.println("Results is null");
 			return null;
 		}
-		
 
 		ByteBuffer b = ByteBuffer.wrap("peers".getBytes());
 

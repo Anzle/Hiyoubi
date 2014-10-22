@@ -61,7 +61,7 @@ public class RUBTClient {
 				
 				if(peers == null){
 					System.err.println("Error retrieving peers!");
-					return;			
+					return;
 				}
 				
 				System.out.println("num peers is " + peers.size());
@@ -79,8 +79,10 @@ public class RUBTClient {
 				}
 				System.out.println("no good peers");
 			}
-			System.out.println("We have connection to peer: " + peer.ip);
-			peer.download();
+			if(peer!= null){
+				System.out.println("We have connection to peer: " + peer.ip);
+				peer.download();
+			}
 			
 		} catch (FileNotFoundException e)
 		{
