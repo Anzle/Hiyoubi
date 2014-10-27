@@ -55,14 +55,16 @@ public class Peer {
 			return false;
 		}
 		// handshake with the peer
-		if (!handshake())
+		if (!handshake()){
 			System.err.println("The handshake with: " + ip + " failed.");
+			return false;
+		}
 		// if both are good return true
 		return true;
 	}
 
 	public void download() {
-		System.out.println("Starting download with peer " + this.ip);
+		System.out.println("Starting download with peer " + this.ip + "send intrested");
 		byte[] m = Message.interested();
 		this.sendMessage(m);
 		try {
@@ -114,7 +116,11 @@ public class Peer {
 						this.bitfield = bitfield;
 						System.out.println("bitfield recieved");
 						System.out.println("building request");
+<<<<<<< HEAD
 						this.requestNextBlock();
+=======
+						//requestNextBlock();
+>>>>>>> origin/master
 						break;
 					case (byte) 6: // request
 						System.out.println("request");
@@ -130,20 +136,30 @@ public class Peer {
 						int bindex = this.from_peer.readInt();
 						int boffset = this.from_peer.readInt();
 						byte[] data = new byte[payloadLen];
+<<<<<<< HEAD
 						for(int i = 0; i < payloadLen; i++){
 							//System.out.println(i);
 							data[i] = this.from_peer.readByte();
 						}
 						System.out.println("piece " + bindex + "-" + boffset);
+=======
+						this.from_peer.readFully(data);
+						
+						System.out.println("Read: piece " + bindex + "-" + boffset);
+>>>>>>> origin/master
 						{
 							Piece p = this.getPiece(bindex);
 							if (p != null) {
 								System.out.println("Saving...");
 								p.saveBlock(boffset, data);
+<<<<<<< HEAD
 								this.currentPieceOffset += payloadLen;
 								this.requestNextBlock();
 							}else{
 								System.err.println("Piece not found!");
+=======
+								this.currentPieceOffset += boffset; //WHERE IS THIS UPDATED???? WHAT POINT IT HAVE
+>>>>>>> origin/master
 							}
 						}
 						break;
@@ -221,10 +237,10 @@ public class Peer {
 					byte[] m = Message.blockRequestBuilder(this.currentPieceIndex, this.currentPieceOffset, calculateBlockSize(this.currentPieceIndex, this.currentPieceOffset));
 					this.sendMessage(m);
 					System.out.println("requested block " + this.currentPieceIndex + "-" + this.currentPieceOffset);
-					return;
+//------------------------There was a return here, I removed it
 				}
-				if (!this.retrieved[i])
-					num_left++;
+				//if (!this.retrieved[i])
+					//num_left++;
 			}
 			// pieces are all retrieved or none available from peer
 

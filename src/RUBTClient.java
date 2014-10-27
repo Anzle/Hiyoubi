@@ -67,18 +67,19 @@ public class RUBTClient {
 				System.out.println("num peers is " + peers.size());
 				
 				for(Peer p : peers){
-					if(p.connect()){
+					/*Line for Phase 2*/
+					if(p.ip.equals("128.6.171.130") || p.ip.equals("128.6.171.131"))
+						{if(p.connect()){
 						peer = p;
 						break;
-					}
-					
+					}	}
 				}
-				
 				if(peer != null){
 					break;
 				}
 				System.out.println("no good peers");
 			}
+			
 			if(peer!= null){
 				System.out.println("We have connection to peer: " + peer.ip);
 				peer.download();
