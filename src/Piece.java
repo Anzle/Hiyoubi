@@ -55,5 +55,9 @@ public class Piece {
 		} 
 		return false;
 	}
+	
+	public int getLength(){
+		return this.data.length;
+	}
 
 }

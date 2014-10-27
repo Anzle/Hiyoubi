@@ -114,7 +114,7 @@ public class Peer {
 						this.bitfield = bitfield;
 						System.out.println("bitfield recieved");
 						System.out.println("building request");
-						requestNextBlock();
+						this.requestNextBlock();
 						break;
 					case (byte) 6: // request
 						System.out.println("request");
@@ -125,18 +125,25 @@ public class Peer {
 						// buffer
 						break;
 					case (byte) 7: // piece
-						System.out.println("loading...");
 						int payloadLen = len - 9;
+						System.out.println("loading ("+payloadLen+")...");
 						int bindex = this.from_peer.readInt();
 						int boffset = this.from_peer.readInt();
 						byte[] data = new byte[payloadLen];
-						this.from_peer.readFully(data);
+						for(int i = 0; i < payloadLen; i++){
+							//System.out.println(i);
+							data[i] = this.from_peer.readByte();
+						}
 						System.out.println("piece " + bindex + "-" + boffset);
 						{
-							Piece p = this.pieces.get(bindex);
+							Piece p = this.getPiece(bindex);
 							if (p != null) {
+								System.out.println("Saving...");
 								p.saveBlock(boffset, data);
-								this.currentPieceOffset += boffset;
+								this.currentPieceOffset += payloadLen;
+								this.requestNextBlock();
+							}else{
+								System.err.println("Piece not found!");
 							}
 						}
 						break;
@@ -161,22 +168,38 @@ public class Peer {
 			}
 			socket.close();
 		} catch (IOException e) {
-			System.err.println("Client " + this.ip + ":" + this.port + " disconnected. " + e.getMessage());
+			System.err.println("Peer " + this.ip + ":" + this.port + " disconnected. " + e.getMessage());
 		}
+	}
+	
+	private Piece getPiece(int index){
+		Piece p = this.pieces.get(index);
+		if(p == null){
+			int pieceLength = this.tracker.torrentInfo.piece_length;
+			if (this.currentPieceIndex == this.tracker.torrentInfo.piece_hashes.length - 1) {
+				pieceLength = this.tracker.torrentInfo.file_length % this.tracker.torrentInfo.piece_length;
+				if (pieceLength == 0) {
+					pieceLength = this.tracker.torrentInfo.piece_length;
+				}
+			}
+			p = new Piece(index, pieceLength);
+			this.pieces.put(index,p);
+		}
+		return p;
 	}
 
 	private void requestNextBlock() throws IOException {
-		Piece piece = this.pieces.get(this.currentPieceIndex);
-		if (piece != null && !piece.isFull()) {
+		Piece piece = this.getPiece(this.currentPieceIndex);
+		if(piece != null && piece.isFull()){
+			if(piece.isValid(this.tracker.torrentInfo.piece_hashes[piece.getIndex()].array()))
+				this.bitfield[piece.getIndex()] = true;
+		}else if (piece != null && this.currentPieceIndex >= 0) {
+			int blen = calculateBlockSize(this.currentPieceIndex, this.currentPieceOffset);
 
-			if (this.currentPieceIndex > 0) {
-				int blen = calculateBlockSize(this.currentPieceIndex, this.currentPieceOffset);
-
-				byte[] m = Message.blockRequestBuilder(piece.getIndex(), this.currentPieceOffset, blen);
-				this.sendMessage(m);
-				System.out.println("requested block " + this.currentPieceIndex + "-" + this.currentPieceOffset);
-				return;
-			}
+			byte[] m = Message.blockRequestBuilder(piece.getIndex(), this.currentPieceOffset, blen);
+			this.sendMessage(m);
+			System.out.println("requested block " + this.currentPieceIndex + "-" + this.currentPieceOffset);
+			return;
 		}
 
 		if (this.bitfield != null && this.retrieved != null) {
@@ -193,8 +216,8 @@ public class Peer {
 							pieceLength = this.tracker.torrentInfo.piece_length;
 						}
 					}
-
-					this.pieces.put(currentPieceIndex,new Piece(currentPieceIndex, pieceLength));
+					if(this.getPiece(this.currentPieceIndex) == null)
+						this.pieces.put(currentPieceIndex,new Piece(currentPieceIndex, pieceLength));
 					byte[] m = Message.blockRequestBuilder(this.currentPieceIndex, this.currentPieceOffset, calculateBlockSize(this.currentPieceIndex, this.currentPieceOffset));
 					this.sendMessage(m);
 					System.out.println("requested block " + this.currentPieceIndex + "-" + this.currentPieceOffset);
