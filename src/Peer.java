@@ -197,11 +197,12 @@ public class Peer {
 				this.bitfield[piece.getIndex()] = true;
 		}else if (piece != null && this.currentPieceIndex >= 0) {
 			int blen = calculateBlockSize(this.currentPieceIndex, this.currentPieceOffset);
-
-			byte[] m = Message.blockRequestBuilder(piece.getIndex(), this.currentPieceOffset, blen);
-			this.sendMessage(m);
-			System.out.println("requested block " + this.currentPieceIndex + "-" + this.currentPieceOffset);
-			return;
+			if(blen > 0){
+				byte[] m = Message.blockRequestBuilder(piece.getIndex(), this.currentPieceOffset, blen);
+				this.sendMessage(m);
+				System.out.println("requested block " + this.currentPieceIndex + "-" + this.currentPieceOffset);
+				return;
+			}
 		}
 
 		if (this.bitfield != null && this.retrieved != null) {
@@ -211,19 +212,21 @@ public class Peer {
 					this.currentPieceIndex = i;
 					this.currentPieceOffset = 0;
 
-					int pieceLength = this.tracker.torrentInfo.piece_length;
+					int pieceLength = this.tracker.torrentInfo.piece_length - 1;
 					if (this.currentPieceIndex == this.tracker.torrentInfo.piece_hashes.length - 1) {
 						pieceLength = this.tracker.torrentInfo.file_length % this.tracker.torrentInfo.piece_length;
 						if (pieceLength == 0) {
 							pieceLength = this.tracker.torrentInfo.piece_length;
 						}
 					}
+					System.out.println(pieceLength);
 					if(this.getPiece(this.currentPieceIndex) == null)
 						this.pieces.put(currentPieceIndex,new Piece(currentPieceIndex, pieceLength));
 					byte[] m = Message.blockRequestBuilder(this.currentPieceIndex, this.currentPieceOffset, calculateBlockSize(this.currentPieceIndex, this.currentPieceOffset));
 					this.sendMessage(m);
 					System.out.println("requested block " + this.currentPieceIndex + "-" + this.currentPieceOffset);
 //------------------------There was a return here, I removed it
+					return;
 				}
 				//if (!this.retrieved[i])
 					//num_left++;
@@ -233,18 +236,18 @@ public class Peer {
 			if (num_left > 0) {
 				System.err.println("No more pieces avaialble from current peer");
 			}
-			System.out.println("Oops");
+			System.out.println("Error. No more pieces. and piece requested ");
 
 		}else
 			System.out.println("null bitfield?");
 	}
 
 	private int calculateBlockSize(int index, int offset) {
-		int pieceLength = this.tracker.torrentInfo.piece_length;
+		int pieceLength = this.tracker.torrentInfo.piece_length - 1;
 		if (index == this.tracker.torrentInfo.piece_hashes.length - 1) {
 			pieceLength = this.tracker.torrentInfo.file_length % this.tracker.torrentInfo.piece_length;
 			if (pieceLength == 0) {
-				pieceLength = this.tracker.torrentInfo.piece_length;
+				pieceLength = this.tracker.torrentInfo.piece_length - 1;
 			}
 		}
 
