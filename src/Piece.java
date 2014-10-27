@@ -16,6 +16,7 @@ public class Piece {
 	public void saveBlock(int offset, byte[] data){
 		if(data == null)
 			return;
+		
 		for(int i = 0; i < data.length && offset + i < this.data.length; i++){
 			this.data[offset + i] = data[i];
 		}
@@ -32,18 +33,21 @@ public class Piece {
 	}
 	
 	public boolean isFull(){
-		return this.data.length == this.datawritten;
+		System.out.println(this.data.length + " == " + this.datawritten);
+		return this.data.length == this.datawritten ;
 	}
 	
 	public boolean isValid(byte[] hash){
 		try {
 			MessageDigest hasher = MessageDigest.getInstance("SHA");
 			byte[] result = hasher.digest(this.data);
+			hasher.reset();
 			if(result.length != hash.length){
 				System.err.println("Hash check for piece " + this.index + " failed with hash length mismatch.");
 				return false;
 			}
-			
+			System.out.println("hash-"+ (new String(hash)));
+			System.out.println("newh-"+ (new String(result)));
 			for(int i = 0; i < result.length; i++){
 				if(result[i] != hash[i]){
 					System.err.println("Hash check for piece " + this.index + " failed at byte " + i + ".");
@@ -53,7 +57,7 @@ public class Piece {
 		} catch (NoSuchAlgorithmException e) {
 			System.err.println("Unable to check hash of piece. Invalid Algorithm");
 		} 
-		return false;
+		return true;
 	}
 	
 	public int getLength(){

@@ -195,7 +195,11 @@ public class Peer {
 		Piece piece = this.getPiece(this.currentPieceIndex);
 		if(piece != null && piece.isFull()){
 			if(piece.isValid(this.tracker.torrentInfo.piece_hashes[piece.getIndex()].array()))
-				this.bitfield[piece.getIndex()] = true;
+				this.retrieved[piece.getIndex()] = true;
+			else{
+				System.out.println("hash failed");
+				return;
+			}
 		}else if (piece != null && this.currentPieceIndex >= 0) {
 			int blen = calculateBlockSize(this.currentPieceIndex, this.currentPieceOffset);
 			if(blen > 0){
@@ -213,7 +217,7 @@ public class Peer {
 					this.currentPieceIndex = i;
 					this.currentPieceOffset = 0;
 
-					int pieceLength = this.tracker.torrentInfo.piece_length - 1;
+					int pieceLength = this.tracker.torrentInfo.piece_length;
 					if (this.currentPieceIndex == this.tracker.torrentInfo.piece_hashes.length - 1) {
 						pieceLength = this.tracker.torrentInfo.file_length % this.tracker.torrentInfo.piece_length;
 						if (pieceLength == 0) {
@@ -252,11 +256,11 @@ public class Peer {
 	 * @return blocklength < MAXLENGTH if this is the last block and if it is small
 	 * */
 	private int calculateBlockSize(int index, int offset) {
-		int pieceLength = this.tracker.torrentInfo.piece_length - 1;
+		int pieceLength = this.tracker.torrentInfo.piece_length;
 		if (index == this.tracker.torrentInfo.piece_hashes.length - 1) {
 			pieceLength = this.tracker.torrentInfo.file_length % this.tracker.torrentInfo.piece_length;
 			if (pieceLength == 0) {
-				pieceLength = this.tracker.torrentInfo.piece_length - 1;
+				pieceLength = this.tracker.torrentInfo.piece_length;
 			}
 		}
 
