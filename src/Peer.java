@@ -65,15 +65,16 @@ public class Peer {
 
 	public void download() {
 		System.out.println("Starting download with peer " + this.ip + "send intrested");
+		System.out.println(this.tracker.torrentInfo.piece_hashes.length);
 		byte[] m = Message.interested();
 		this.sendMessage(m);
 		try {
 			while (this.socket.isConnected()) {
 				int len = this.from_peer.readInt();
-				System.out.println("read init!");
+				//System.out.println("read init!");
 				if (len > 0) {
 					byte id = this.from_peer.readByte();
-					System.out.println("messageid: " + ((int) (id)));
+					//System.out.println("messageid: " + ((int) (id)));
 					switch (id) {
 					case (byte) 0: // choke
 						this.peer_choking = true;
@@ -114,12 +115,12 @@ public class Peer {
 							}
 						}
 						this.bitfield = bitfield;
-						System.out.println("bitfield recieved");
-						System.out.println("building request");
+						//System.out.println("bitfield recieved");
+						//System.out.println("building request");
 						this.requestNextBlock();
 						break;
 					case (byte) 6: // request
-						System.out.println("request");
+						//System.out.println("request");
 						int rindex = this.from_peer.readInt();
 						int rbegin = this.from_peer.readInt();
 						int rlength = this.from_peer.readInt();
@@ -128,7 +129,7 @@ public class Peer {
 						break;
 					case (byte) 7: // piece
 						int payloadLen = len - 9;
-						System.out.println("loading ("+payloadLen+")...");
+						//System.out.println("loading ("+payloadLen+")...");
 						int bindex = this.from_peer.readInt();
 						int boffset = this.from_peer.readInt();
 						byte[] data = new byte[payloadLen];
@@ -140,7 +141,7 @@ public class Peer {
 						{
 							Piece p = this.getPiece(bindex);
 							if (p != null) {
-								System.out.println("Saving...");
+								//System.out.println("Saving...");
 								p.saveBlock(boffset, data);
 								this.currentPieceOffset += payloadLen;
 								
@@ -211,7 +212,6 @@ public class Peer {
 		}
 
 		if (this.bitfield != null && this.retrieved != null) {
-			int num_left = 0;
 			for (int i = 0; i < bitfield.length; i++) {
 				if (bitfield[i] && !this.retrieved[i]) {
 					this.currentPieceIndex = i;
@@ -233,15 +233,9 @@ public class Peer {
 //------------------------There was a return here, I removed it
 					return;
 				}
-				if (!this.retrieved[i])
-					num_left++;
 			}
-			// pieces are all retrieved or none available from peer
-
-			if (num_left > 0) {
-				System.err.println("No more pieces avaialble from current peer");
-			}
-			System.out.println("Error. No more pieces. and piece requested ");
+			
+			
 
 		}else
 			System.out.println("null bitfield?");
