@@ -143,6 +143,7 @@ public class Peer {
 								System.out.println("Saving...");
 								p.saveBlock(boffset, data);
 								this.currentPieceOffset += payloadLen;
+								
 								this.requestNextBlock();
 							}else{
 								System.err.println("Piece not found!");
@@ -228,8 +229,8 @@ public class Peer {
 //------------------------There was a return here, I removed it
 					return;
 				}
-				//if (!this.retrieved[i])
-					//num_left++;
+				if (!this.retrieved[i])
+					num_left++;
 			}
 			// pieces are all retrieved or none available from peer
 
@@ -242,6 +243,14 @@ public class Peer {
 			System.out.println("null bitfield?");
 	}
 
+	/**
+	 * Calculate the size of the block length we desire by
+	 * Checking if this is the last piece
+	 * 	then if the size must be shortened from the norm (less than a normal block size left)
+	 * 
+	 * @return MAXLENGTH if block size is normal
+	 * @return blocklength < MAXLENGTH if this is the last block and if it is small
+	 * */
 	private int calculateBlockSize(int index, int offset) {
 		int pieceLength = this.tracker.torrentInfo.piece_length - 1;
 		if (index == this.tracker.torrentInfo.piece_hashes.length - 1) {
@@ -277,7 +286,7 @@ public class Peer {
 	}
 
 	/**
-	 * Sends a magical Columbidae to deliver our message to the connected Peer
+	 * Sends a magical Columbidae(a bird) to deliver our message to the connected Peer
 	 * If the bird is shot out of flight, print to the error stream
 	 * 
 	 * @param message
@@ -294,7 +303,12 @@ public class Peer {
 		}
 		return true;
 	}
-
+	/**
+	 * Receives a magical Columbidae(a pigeon) who brings messages from the connected Peer
+	 * If the bird has a blank message... we don't really care. 
+	 * 
+	 * @return the complete message brought by the pigeon
+	 */
 	public byte[] recieveMessage() {
 		byte[] responce = new byte[68];
 		try {
