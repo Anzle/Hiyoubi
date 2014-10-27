@@ -116,11 +116,7 @@ public class Peer {
 						this.bitfield = bitfield;
 						System.out.println("bitfield recieved");
 						System.out.println("building request");
-<<<<<<< HEAD
 						this.requestNextBlock();
-=======
-						//requestNextBlock();
->>>>>>> origin/master
 						break;
 					case (byte) 6: // request
 						System.out.println("request");
@@ -136,30 +132,20 @@ public class Peer {
 						int bindex = this.from_peer.readInt();
 						int boffset = this.from_peer.readInt();
 						byte[] data = new byte[payloadLen];
-<<<<<<< HEAD
 						for(int i = 0; i < payloadLen; i++){
 							//System.out.println(i);
 							data[i] = this.from_peer.readByte();
 						}
 						System.out.println("piece " + bindex + "-" + boffset);
-=======
-						this.from_peer.readFully(data);
-						
-						System.out.println("Read: piece " + bindex + "-" + boffset);
->>>>>>> origin/master
 						{
 							Piece p = this.getPiece(bindex);
 							if (p != null) {
 								System.out.println("Saving...");
 								p.saveBlock(boffset, data);
-<<<<<<< HEAD
 								this.currentPieceOffset += payloadLen;
 								this.requestNextBlock();
 							}else{
 								System.err.println("Piece not found!");
-=======
-								this.currentPieceOffset += boffset; //WHERE IS THIS UPDATED???? WHAT POINT IT HAVE
->>>>>>> origin/master
 							}
 						}
 						break;
