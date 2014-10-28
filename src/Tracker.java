@@ -180,9 +180,9 @@ public class Tracker {
 	/**return a byte[] of the peerId we got*/
 	public byte[] getPeerId(){return this.peer_id.getBytes();}
 	
-	public void client_info(int port_num){
+	public void client_info(PeerManager client){
 		System.out.println("client info: ");
-		System.out.println("port number: "+port_num);
+		System.out.println("port number: "+client.port);
 		
 		// this.torrentInfo.
 	    // can implement serverSocket class 69 69
