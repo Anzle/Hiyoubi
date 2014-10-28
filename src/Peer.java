@@ -8,7 +8,7 @@ import java.util.HashMap;
 public class Peer {
 
 	private static final int MAXLENGTH = 16384;
-	String id;
+	byte[] id;
 	String ip;
 	int port;
 
@@ -27,10 +27,13 @@ public class Peer {
 	HashMap<Integer,Piece> pieces;
 	private int currentPieceIndex = -1;
 	private int currentPieceOffset = -1;
-
+	
+	/**Connect outwards to a Peer
+	 * This is used when looking to a Peer to download from them
+	 * */
 	public Peer(String id, String ip, int port, Tracker tracker) {
 		// TODO Auto-generated constructor stub
-		this.id = id;
+		this.id = id.getBytes();
 		this.ip = ip;
 		this.port = port;
 		this.tracker = tracker;
@@ -280,7 +283,7 @@ public class Peer {
 		if (responce == null)
 			return false;
 
-		return Message.validateHandshake(responce, shake, id.getBytes());
+		return Message.validateHandshake(responce, shake, id);
 	}
 
 	/**
@@ -317,6 +320,84 @@ public class Peer {
 		}
 		return responce;
 
+	}
+	
+	//-----------------Incoming connections
+	/**
+	 * Connect inwards to a Peer
+	 * 	This is used when a Peer wants us to upload to it
+	 * 	The main difference between the constructors is that a socket
+	 *  has already been created
+	 *  The id will be obtained during the handshake*/
+	public Peer(Socket connection, Tracker tracker){
+		socket = connection;
+		port = socket.getLocalPort();
+		ip = socket.getInetAddress().getHostAddress();
+		
+		this.tracker = tracker;
+		bitfield = new boolean[this.tracker.torrentInfo.piece_hashes.length];
+		retrieved = new boolean[this.tracker.torrentInfo.piece_hashes.length];
+		pieces = new HashMap<Integer,Piece>();
+	}
+	
+	/**
+	 * This connect method handles sockets that already have a
+	 * @param boob -> useless
+	 * @return
+	 * 	true if the handshake succeeds
+	 *  false if the handshake fails
+	 */
+	boolean connect(char boob){
+		try {
+			from_peer = new DataInputStream(socket.getInputStream());
+			to_peer = new DataOutputStream(socket.getOutputStream());
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			System.err.println(e.getMessage());
+			return false;
+		}
+		// handshake with the peer
+		if (!handshake(boob)){
+			System.err.println("The handshake with: " + ip + " failed.");
+			return false;
+		}
+		// if both are good return true
+		return true;
+	}
+	
+	/**
+	 * This version of handshake performs a handshake where a peer is contacting us first
+	 * 	It receives a handshake, then validates it aginst ours before returning our handshake
+	 * 	to the requester
+	 * 
+	 * @param boob -> useless
+	 * 
+	 * @return
+	 * 	true if the handshake is valid and successful
+	 * 	false if the received handshake is bad
+	 * 
+	 * The method also extracts the peerID of the requesting peer and saves it
+	 */
+	boolean handshake(char boob){
+		byte[] shake = Message.handshake(tracker.getPeerId(), tracker.getInfoHash());
+		byte[] responce = recieveMessage();
+		
+		//If the response is not of the wrong length
+		if(responce.length== 68){
+			//Extract the peerID from the response
+			for(int i=0;i<20;i++){
+				id[i] = responce[48+i];
+			}
+			//check that the handshake is good, then send our handshake to the peer
+			if(Message.validateHandshake(responce, shake, id)){
+				sendMessage(shake);
+				return true;
+			}
+		}
+		//else, if that stuff fails. . .
+		sendMessage(new byte[68]);
+		return false;
 	}
 
 }
