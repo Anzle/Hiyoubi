@@ -182,6 +182,8 @@ public class Tracker {
 	
 	public void client_info(int port_num){
 		System.out.println("client info: ");
+		System.out.println("port number: "+port_num);
+		
 		// this.torrentInfo.
 	    // can implement serverSocket class 69 69
 		//implemented somewhere in the code about how much is downloaded 
