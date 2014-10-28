@@ -179,5 +179,13 @@ public class Tracker {
 	
 	/**return a byte[] of the peerId we got*/
 	public byte[] getPeerId(){return this.peer_id.getBytes();}
+	
+	public void client_info(int port_num){
+		System.out.println("client info: ");
+		// this.torrentInfo.
+	    // can implement serverSocket class 69 69
+		//implemented somewhere in the code about how much is downloaded 
+		//take in an argument for the port number which continues to listen and then implement with a server socket to get the info
+	}
 
 }
