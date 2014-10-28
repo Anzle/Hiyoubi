@@ -19,6 +19,10 @@ public class PeerManager {
 	ArrayList<Peer> peerList;
 	Tracker tracker;
 	Thread serverCheck;
+	Thread peerCheck;
+	/**The wait interval: set to 2 minutes*/
+	final int INTERVAL = 120000;
+	
 	
 	public PeerManager(int portNumber){
 		port = portNumber;
@@ -29,43 +33,71 @@ public class PeerManager {
 			}
 			serverCheck = new Thread(new ServerListener());
 			serverCheck.start();
+			peerCheck = new Thread(new PeerListener());
+			peerCheck.start();
+			
 			
 		
 	}
-	//TODO Add in another thread to run. 
 	
-	/**
-	 * Check the tracker for peers that we can download the file from
-	 * 	if a peer is already connected to us, skip that peer */
-	public void downloadFromPeers(){
-		//System.out.println("Getting new peers...");
-		ArrayList<Peer> peers = tracker.getPeers();
+	/**@return port number*/
+	public int getPort(){return port;}
+	//TODO Add in another thread to run. 
+	private class PeerListener implements Runnable{
 		
-		if(peers == null){
-			System.err.println("There are no new peers.");
-			//make this a thread, make it sleep?
-			return;
-		}
+		//This constructer calls super... just like an implicit one... so it does nothing
+		public PeerListener(){super();}
 		
-		//System.out.println("num peers is " + peers.size());
-		
-		for(Peer p : peers){
-			//check that we don't add a peer who has been added already
-			if(peerList.contains(p))
-				continue;
-			
-			//for Phase 2, we only connect to these peers
-			if(p.ip.equals("128.6.171.130") || p.ip.equals("128.6.171.131")){
-				if(p.connect()){
-					peerList.add(p);
-					System.out.println("We have connection to peer: " + p.ip);
-					//p.run(); ->begins the downloading process?
+		/**
+		 * Check the tracker for peers that we can download the file from
+		 * 	if a peer is already connected to us, skip that peer */
+		public void run(){
+			//Loop Forever
+			while(true){
+				System.out.println("Checking for new peers.");
+				ArrayList<Peer> peers = tracker.getPeers();
+				
+				if(peers == null){
+					System.err.println("There are no new peers.");
+					//make this a thread, make it sleep?
+					return;
+				}
+				
+				//System.out.println("num peers is " + peers.size());
+				
+				for(Peer p : peers){
+					//check that we don't add a peer who has been added already
+					if(peerList.contains(p))
+						continue;
+					
+					//for Phase 2, we only connect to these peers
+					if(p.ip.equals("128.6.171.130") || p.ip.equals("128.6.171.131")){
+						if(p.connect()){
+							add(p); //This is a synchronized method
+							System.out.println("Established connection to peer: " + p.ip);
+							//p.run(); ->begins the downloading process?
+						}
+					}
+				}
+				
+				try {
+					Thread.sleep(INTERVAL);
+				} catch (InterruptedException e) {
+					System.err.println("peerListener: Sleep was interupted..."+
+							" shouldn't actually matter that this happened");
 				}
 			}
 		}
-
+		
+		
+		/*To prevent memory leakage*/
+		private synchronized void add(Object p){
+			if(p instanceof Peer)
+				peerList.add((Peer)p);
+		}
+		
 	}
-	
+
 	
 	private class ServerListener implements Runnable{
 		
@@ -83,12 +115,18 @@ public class PeerManager {
 					if(peerList.contains(aPeer))
 						continue;
 					if(aPeer.connect('i'))
-						peerList.add(aPeer);
+						add(aPeer);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
+		}
+		
+		/*To prevent memory leakage*/
+		private synchronized void add(Object p){
+			if(p instanceof Peer)
+				peerList.add((Peer)p);
 		}
 	}
 	
