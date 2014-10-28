@@ -33,7 +33,7 @@ public class Piece {
 	}
 	
 	public boolean isFull(){
-		System.out.println(this.data.length + " == " + this.datawritten);
+		//System.out.println(this.data.length + " == " + this.datawritten);
 		return this.data.length == this.datawritten ;
 	}
 	
@@ -46,11 +46,13 @@ public class Piece {
 				System.err.println("Hash check for piece " + this.index + " failed with hash length mismatch.");
 				return false;
 			}
-			System.out.println("hash-"+ (new String(hash)));
-			System.out.println("newh-"+ (new String(result)));
+			//System.out.println("hash-"+ (new String(hash)));
+			//System.out.println("newh-"+ (new String(result)));
 			for(int i = 0; i < result.length; i++){
 				if(result[i] != hash[i]){
 					System.err.println("Hash check for piece " + this.index + " failed at byte " + i + ".");
+					this.data = new byte[this.data.length];
+					this.datawritten = 0;
 					return false;
 				}
 			}

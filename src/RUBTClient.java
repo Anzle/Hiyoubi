@@ -69,10 +69,12 @@ public class RUBTClient {
 				for(Peer p : peers){
 					/*Line for Phase 2*/
 					if(p.ip.equals("128.6.171.130") || p.ip.equals("128.6.171.131"))
-						{if(p.connect()){
-						peer = p;
-						break;
-					}	}
+					{
+						if(p.connect()){
+							peer = p;
+							break;
+						}
+					}
 				}
 				if(peer != null){
 					break;
@@ -82,7 +84,7 @@ public class RUBTClient {
 			
 			if(peer!= null){
 				System.out.println("We have connection to peer: " + peer.ip);
-				peer.download();
+				peer.download(sfile);
 			}
 			
 		} catch (FileNotFoundException e)

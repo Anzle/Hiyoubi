@@ -1,5 +1,8 @@
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -27,6 +30,7 @@ public class Peer {
 	HashMap<Integer,Piece> pieces;
 	private int currentPieceIndex = -1;
 	private int currentPieceOffset = -1;
+	private String outputFile;
 	
 	/**Connect outwards to a Peer
 	 * This is used when looking to a Peer to download from them
@@ -66,7 +70,8 @@ public class Peer {
 		return true;
 	}
 
-	public void download() {
+	public void download(String outputFile) {
+		this.outputFile = outputFile;
 		System.out.println("Starting download with peer " + this.ip + "send intrested");
 		System.out.println(this.tracker.torrentInfo.piece_hashes.length);
 		byte[] m = Message.interested();
@@ -209,7 +214,7 @@ public class Peer {
 			if(blen > 0){
 				byte[] m = Message.blockRequestBuilder(piece.getIndex(), this.currentPieceOffset, blen);
 				this.sendMessage(m);
-				System.out.println("requested block " + this.currentPieceIndex + "-" + this.currentPieceOffset);
+				//System.out.println("requested block " + this.currentPieceIndex + "-" + this.currentPieceOffset);
 				return;
 			}
 		}
@@ -227,21 +232,52 @@ public class Peer {
 							pieceLength = this.tracker.torrentInfo.piece_length;
 						}
 					}
-					System.out.println(pieceLength);
+					//System.out.println(pieceLength);
 					if(this.getPiece(this.currentPieceIndex) == null)
 						this.pieces.put(currentPieceIndex,new Piece(currentPieceIndex, pieceLength));
 					byte[] m = Message.blockRequestBuilder(this.currentPieceIndex, this.currentPieceOffset, calculateBlockSize(this.currentPieceIndex, this.currentPieceOffset));
 					this.sendMessage(m);
-					System.out.println("requested block " + this.currentPieceIndex + "-" + this.currentPieceOffset);
+					//System.out.println("requested block " + this.currentPieceIndex + "-" + this.currentPieceOffset);
 //------------------------There was a return here, I removed it
 					return;
 				}
 			}
 			
-			
+			saveFile();
 
 		}else
 			System.out.println("null bitfield?");
+	}
+
+	private void saveFile() {
+		byte[] data = new byte[this.tracker.torrentInfo.file_length];
+		for(int i : this.pieces.keySet()){
+			Piece p = pieces.get(i);
+			int pind = p.getIndex();
+			byte[] pdata = p.getData();
+			int dataOffset = pind * this.tracker.torrentInfo.piece_length;
+
+			System.out.println(data.length + " " + dataOffset + " " + pind + " " + pdata.length);
+			if(pind < 0)
+				continue;
+			for(int j = 0; j < pdata.length && dataOffset + j < data.length; j++){
+				data[dataOffset + j] = pdata[j];
+			}
+		}
+		BufferedOutputStream bos;
+		try {
+			bos = new BufferedOutputStream(new FileOutputStream(outputFile));
+			bos.write(data);
+			bos.flush();
+			bos.close();
+			this.socket.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	/**
