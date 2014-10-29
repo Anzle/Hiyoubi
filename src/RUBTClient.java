@@ -52,14 +52,17 @@ public class RUBTClient {
 			}
 
 			fstream.close();
+
 			TorrentInfo torInfo = new TorrentInfo(tbytes);
 			System.out.println("Init tracker...");
-			Tracker tracker = new Tracker(torInfo);
+			
+			TorrentHandler torrentHandler = new TorrentHandler(torInfo,sfile);
+			Tracker tracker = new Tracker(torInfo, torrentHandler);
 			
 			PeerManager peerManager = new PeerManager(SERVER_PORT, tracker);
 			
 			while(!peerManager.downloading)
-				peerManager.download(sfile);
+				peerManager.download();
 			
 			//Old code moved to the bottom of file
 			

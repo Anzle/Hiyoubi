@@ -35,7 +35,7 @@ public class PeerManager {
 				System.err.println("PeerManager's server has run into an issue and failed to initilize");
 			}
 			serverCheck = new Thread(new ServerListener());
-			serverCheck.start();
+			//serverCheck.start();
 			peerCheck = new Thread(new PeerListener());
 			peerCheck.start();
 			
@@ -52,7 +52,7 @@ public class PeerManager {
 	/**
 	 * @param the file to be saved to
 	 * */
-	public void download(String outputFile) {
+	public void download() {
 		if(peerList.isEmpty()){
 			//System.err.println("There are no peers to download from.");
 			downloading = false;
@@ -61,7 +61,7 @@ public class PeerManager {
 			Peer p = peerList.get(0);
 			System.out.println("Downloading from: " + p.ip);
 			downloading = true;
-			p.download(outputFile);
+			p.download();
 		}
 	}
 	
@@ -101,14 +101,14 @@ public class PeerManager {
 				
 				for(Peer p : peers){
 					//check that we don't add a peer who has been added already
-					if(contains(p))
+					if(peerList.contains(p)){
+						System.out.println("Peer List contains:" + p);
 						continue;
-					
+					}
 					//for Phase 2, we only connect to these peers
 					else if(p.ip.equals("128.6.171.130") || p.ip.equals("128.6.171.131")){
 						if(p.connect()){
 							add(p); //This is a synchronized method
-							System.out.println("Established connection to peer: " + p.ip);
 							//p.run(); ->begins the downloading process?
 						}
 						//else
@@ -127,9 +127,10 @@ public class PeerManager {
 		
 		
 		/*To prevent memory leakage*/
-		private synchronized void add(Object p){
-			if(p instanceof Peer)
+		private synchronized void add(Peer p){
+			//if(p instanceof Peer)
 				peerList.add((Peer)p);
+		System.out.println("Established connection to peer: " + p.ip);
 		}
 		
 		private synchronized boolean contains(Object p){
@@ -151,12 +152,10 @@ public class PeerManager {
 		public void run(){
 			while(true){
 				try {
-<<<<<<< HEAD
+
 					System.out.println("Checking for inbound Connections");
-					aPeer = new Peer(server.accept(), tracker);
-=======
 					aPeer = new Peer(server.accept(), tracker, tracker.getPeerId());
->>>>>>> origin/master
+
 					//aPeer.new connect for incoming connects
 					if(peerList.contains(aPeer))
 						continue;
