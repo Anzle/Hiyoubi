@@ -22,9 +22,11 @@ public class Tracker {
 	private final char[] HEXCHARS = "0123456789ABCDEF".toCharArray();
 	private String peer_id;
 	private byte[] info_hash;
+	private TorrentHandler torrentHandler;
 
-	public Tracker(TorrentInfo torrentInfo) {
+	public Tracker(TorrentInfo torrentInfo, TorrentHandler torrentHandler) {
 		this.torrentInfo = torrentInfo;
+		this.torrentHandler = torrentHandler;
 		/*
 		try {
 			ByteBuffer bytes = Bencoder2.getInfoBytes(torrentInfo.torrent_file_bytes);
@@ -166,7 +168,7 @@ public class Tracker {
 			String id = new String(((ByteBuffer) id_o).array());
 			
 			
-			Peer p = new Peer(id, ip, port, this);
+			Peer p = new Peer(id, ip, port, torrentHandler, this.peer_id.getBytes());
 			peers.add(p);
 		}
 

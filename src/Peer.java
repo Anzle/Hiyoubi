@@ -1,16 +1,11 @@
-import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.HashMap;
 
-public class Peer {
+public class Peer implements Runnable {
 
-	private static final int MAXLENGTH = 16384;
 	byte[] id;
 	String ip;
 	int port;
@@ -18,32 +13,27 @@ public class Peer {
 	Socket socket;
 	DataInputStream from_peer;
 	DataOutputStream to_peer;
-	Tracker tracker;
 	private boolean peer_choking = false;
 	private boolean peer_interested = false;
 	private boolean am_choking = false;
 	private boolean am_interested = false;
 
 	boolean[] bitfield;
-	boolean[] retrieved;
 
-	HashMap<Integer,Piece> pieces;
-	private int currentPieceIndex = -1;
-	private int currentPieceOffset = -1;
-	private String outputFile;
+	private TorrentHandler torrentHandler;
+	private byte[] clientID;
 	
 	/**Connect outwards to a Peer
 	 * This is used when looking to a Peer to download from them
 	 * */
-	public Peer(String id, String ip, int port, Tracker tracker) {
+	public Peer(String id, String ip, int port, TorrentHandler torrentHandler, byte[] clientID){
 		// TODO Auto-generated constructor stub
 		this.id = id.getBytes();
 		this.ip = ip;
 		this.port = port;
-		this.tracker = tracker;
-		this.bitfield = new boolean[this.tracker.torrentInfo.piece_hashes.length];
-		this.retrieved = new boolean[this.tracker.torrentInfo.piece_hashes.length];
-		this.pieces = new HashMap<Integer,Piece>();
+		this.torrentHandler = torrentHandler;
+		this.clientID = clientID;
+		this.bitfield = new boolean[this.torrentHandler.torrentInfo.piece_hashes.length];
 	}
 
 	public boolean connect() {
@@ -70,10 +60,9 @@ public class Peer {
 		return true;
 	}
 
-	public void download(String outputFile) {
-		this.outputFile = outputFile;
+	public void download() {
 		System.out.println("Starting download with peer " + this.ip + "send intrested");
-		System.out.println(this.tracker.torrentInfo.piece_hashes.length);
+		System.out.println(this.torrentHandler.torrentInfo.piece_hashes.length);
 		byte[] m = Message.interested();
 		this.sendMessage(m);
 		try {
@@ -91,7 +80,7 @@ public class Peer {
 					case (byte) 1: // unchoke
 						this.peer_choking = false;
 						System.out.println("un choked");
-						requestNextBlock();
+						this.torrentHandler.requestNewBlock(this);
 						break;
 					case (byte) 2: // interested
 						this.peer_interested = true;
@@ -125,7 +114,7 @@ public class Peer {
 						this.bitfield = bitfield;
 						//System.out.println("bitfield recieved");
 						//System.out.println("building request");
-						this.requestNextBlock();
+						this.torrentHandler.requestNewBlock(this);
 						break;
 					case (byte) 6: // request
 						//System.out.println("request");
@@ -146,18 +135,9 @@ public class Peer {
 							data[i] = this.from_peer.readByte();
 						}
 						System.out.println("piece " + bindex + "-" + boffset);
-						{
-							Piece p = this.getPiece(bindex);
-							if (p != null) {
-								//System.out.println("Saving...");
-								p.saveBlock(boffset, data);
-								this.currentPieceOffset += payloadLen;
-								
-								this.requestNextBlock();
-							}else{
-								System.err.println("Piece not found!");
-							}
-						}
+						Block b = new Block(bindex, boffset, data);
+						this.torrentHandler.saveBlock(b, this);
+						this.torrentHandler.requestNewBlock(this);
 						break;
 					case (byte) 8: // cancel
 						System.out.println("cancel");
@@ -183,125 +163,6 @@ public class Peer {
 			System.err.println("Peer " + this.ip + ":" + this.port + " disconnected. " + e.getMessage());
 		}
 	}
-	
-	private Piece getPiece(int index){
-		Piece p = this.pieces.get(index);
-		if(p == null){
-			int pieceLength = this.tracker.torrentInfo.piece_length;
-			if (this.currentPieceIndex == this.tracker.torrentInfo.piece_hashes.length - 1) {
-				pieceLength = this.tracker.torrentInfo.file_length % this.tracker.torrentInfo.piece_length;
-				if (pieceLength == 0) {
-					pieceLength = this.tracker.torrentInfo.piece_length;
-				}
-			}
-			p = new Piece(index, pieceLength);
-			this.pieces.put(index,p);
-		}
-		return p;
-	}
-
-	private void requestNextBlock() throws IOException {
-		Piece piece = this.getPiece(this.currentPieceIndex);
-		if(piece != null && piece.isFull()){
-			if(piece.isValid(this.tracker.torrentInfo.piece_hashes[piece.getIndex()].array()))
-				this.retrieved[piece.getIndex()] = true;
-			else{
-				System.out.println("hash failed");
-				return;
-			}
-		}else if (piece != null && this.currentPieceIndex >= 0) {
-			int blen = calculateBlockSize(this.currentPieceIndex, this.currentPieceOffset);
-			if(blen > 0){
-				byte[] m = Message.blockRequestBuilder(piece.getIndex(), this.currentPieceOffset, blen);
-				this.sendMessage(m);
-				//System.out.println("requested block " + this.currentPieceIndex + "-" + this.currentPieceOffset);
-				return;
-			}
-		}
-
-		if (this.bitfield != null && this.retrieved != null) {
-			for (int i = 0; i < bitfield.length; i++) {
-				if (bitfield[i] && !this.retrieved[i]) {
-					this.currentPieceIndex = i;
-					this.currentPieceOffset = 0;
-
-					int pieceLength = this.tracker.torrentInfo.piece_length;
-					if (this.currentPieceIndex == this.tracker.torrentInfo.piece_hashes.length - 1) {
-						pieceLength = this.tracker.torrentInfo.file_length % this.tracker.torrentInfo.piece_length;
-						if (pieceLength == 0) {
-							pieceLength = this.tracker.torrentInfo.piece_length;
-						}
-					}
-					//System.out.println(pieceLength);
-					if(this.getPiece(this.currentPieceIndex) == null)
-						this.pieces.put(currentPieceIndex,new Piece(currentPieceIndex, pieceLength));
-					byte[] m = Message.blockRequestBuilder(this.currentPieceIndex, this.currentPieceOffset, calculateBlockSize(this.currentPieceIndex, this.currentPieceOffset));
-					this.sendMessage(m);
-					//System.out.println("requested block " + this.currentPieceIndex + "-" + this.currentPieceOffset);
-//------------------------There was a return here, I removed it
-					return;
-				}
-			}
-			
-			saveFile();
-
-		}else
-			System.out.println("null bitfield?");
-	}
-
-	private void saveFile() {
-		byte[] data = new byte[this.tracker.torrentInfo.file_length];
-		for(int i : this.pieces.keySet()){
-			Piece p = pieces.get(i);
-			int pind = p.getIndex();
-			byte[] pdata = p.getData();
-			int dataOffset = pind * this.tracker.torrentInfo.piece_length;
-
-			System.out.println(data.length + " " + dataOffset + " " + pind + " " + pdata.length);
-			if(pind < 0)
-				continue;
-			for(int j = 0; j < pdata.length && dataOffset + j < data.length; j++){
-				data[dataOffset + j] = pdata[j];
-			}
-		}
-		BufferedOutputStream bos;
-		try {
-			bos = new BufferedOutputStream(new FileOutputStream(outputFile));
-			bos.write(data);
-			bos.flush();
-			bos.close();
-			this.socket.close();
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	/**
-	 * Calculate the size of the block length we desire by
-	 * Checking if this is the last piece
-	 * 	then if the size must be shortened from the norm (less than a normal block size left)
-	 * 
-	 * @return MAXLENGTH if block size is normal
-	 * @return blocklength < MAXLENGTH if this is the last block and if it is small
-	 * */
-	private int calculateBlockSize(int index, int offset) {
-		int pieceLength = this.tracker.torrentInfo.piece_length;
-		if (index == this.tracker.torrentInfo.piece_hashes.length - 1) {
-			pieceLength = this.tracker.torrentInfo.file_length % this.tracker.torrentInfo.piece_length;
-			if (pieceLength == 0) {
-				pieceLength = this.tracker.torrentInfo.piece_length;
-			}
-		}
-
-		int blockLength = Peer.MAXLENGTH;
-		if (pieceLength - offset < blockLength)
-			blockLength = pieceLength - offset;
-		return blockLength;
-	}
 
 	/**
 	 * Perform the Handshake with the Peer The method creates the handshake to
@@ -309,7 +170,7 @@ public class Peer {
 	 * returns.
 	 * */
 	public boolean handshake() {
-		byte[] shake = Message.handshake(tracker.getPeerId(), tracker.getInfoHash());
+		byte[] shake = Message.handshake(this.clientID, this.torrentHandler.torrentInfo.info_hash.array());
 		byte[] responce;
 		if (sendMessage(shake))
 			responce = recieveMessage();
@@ -365,15 +226,12 @@ public class Peer {
 	 * 	The main difference between the constructors is that a socket
 	 *  has already been created
 	 *  The id will be obtained during the handshake*/
-	public Peer(Socket connection, Tracker tracker){
+	public Peer(Socket connection, Tracker tracker, byte[] clientID){
 		socket = connection;
 		port = socket.getLocalPort();
 		ip = socket.getInetAddress().getHostAddress();
 		
-		this.tracker = tracker;
-		bitfield = new boolean[this.tracker.torrentInfo.piece_hashes.length];
-		retrieved = new boolean[this.tracker.torrentInfo.piece_hashes.length];
-		pieces = new HashMap<Integer,Piece>();
+		bitfield = new boolean[this.torrentHandler.torrentInfo.piece_hashes.length];
 	}
 	
 	/**
@@ -416,7 +274,7 @@ public class Peer {
 	 * The method also extracts the peerID of the requesting peer and saves it
 	 */
 	boolean handshake(char boob){
-		byte[] shake = Message.handshake(tracker.getPeerId(), tracker.getInfoHash());
+		byte[] shake = Message.handshake(clientID, torrentHandler.torrentInfo.info_hash.array());
 		byte[] responce = recieveMessage();
 		
 		//If the response is not of the wrong length
@@ -434,6 +292,19 @@ public class Peer {
 		//else, if that stuff fails. . .
 		sendMessage(new byte[68]);
 		return false;
+	}
+
+	public String getAddress() {
+		return this.ip + ":" + this.port;
+	}
+
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+	}
+
+	public boolean[] getBitfield() {
+		return this.bitfield;
 	}
 
 }

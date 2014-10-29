@@ -151,8 +151,12 @@ public class PeerManager {
 		public void run(){
 			while(true){
 				try {
+<<<<<<< HEAD
 					System.out.println("Checking for inbound Connections");
 					aPeer = new Peer(server.accept(), tracker);
+=======
+					aPeer = new Peer(server.accept(), tracker, tracker.getPeerId());
+>>>>>>> origin/master
 					//aPeer.new connect for incoming connects
 					if(peerList.contains(aPeer))
 						continue;
