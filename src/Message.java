@@ -79,7 +79,7 @@ public class Message {
 		//Check if it has the proper heading
 		for(int i=0;i<19;i++){
 			if(recieved_handshake[i] != sent_handshake[i]){
-				System.err.println("Invalid Handshake: Heading at " + i);
+				//System.err.println("Invalid Handshake: Heading at " + i);
 				return false;
 			}
 		}

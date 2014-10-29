@@ -16,6 +16,9 @@ public class RUBTClient {
 			return;
 		}
 
+		//THe port that our server will connect over
+		final int SERVER_PORT = 5000;
+		
 		String tfile = args[0]; // .torrent file to be loaded
 		String sfile = args[1]; // name of the file to save the data to
 
@@ -53,39 +56,13 @@ public class RUBTClient {
 			System.out.println("Init tracker...");
 			Tracker tracker = new Tracker(torInfo);
 			
-			Peer peer = null;
+			PeerManager peerManager = new PeerManager(SERVER_PORT, tracker);
 			
-			while(true){
-				System.out.println("Getting new peers...");
-				ArrayList<Peer> peers = tracker.getPeers();
-				
-				if(peers == null){
-					System.err.println("Error retrieving peers!");
-					return;
-				}
-				
-				System.out.println("num peers is " + peers.size());
-				
-				for(Peer p : peers){
-					/*Line for Phase 2*/
-					if(p.ip.equals("128.6.171.130") || p.ip.equals("128.6.171.131"))
-					{
-						if(p.connect()){
-							peer = p;
-							break;
-						}
-					}
-				}
-				if(peer != null){
-					break;
-				}
-				System.out.println("no good peers");
-			}
+			while(!peerManager.downloading)
+				peerManager.download(sfile);
 			
-			if(peer!= null){
-				System.out.println("We have connection to peer: " + peer.ip);
-				peer.download(sfile);
-			}
+			//Old code moved to the bottom of file
+			
 			
 		} catch (FileNotFoundException e)
 		{
@@ -103,3 +80,37 @@ public class RUBTClient {
 	}
 
 }
+/* 
+ * 
+Peer peer = null;
+while(true){
+System.out.println("Getting new peers...");
+ArrayList<Peer> peers = tracker.getPeers();
+
+if(peers == null){
+	System.err.println("Error retrieving peers!");
+	return;
+}
+
+System.out.println("num peers is " + peers.size());
+
+for(Peer p : peers){
+	//Line for Phase 2
+	if(p.ip.equals("128.6.171.130") || p.ip.equals("128.6.171.131"))
+	{
+		if(p.connect()){
+			peer = p;
+			break;
+		}
+	}
+}
+if(peer != null){
+	break;
+}
+System.out.println("no good peers");
+}
+
+if(peer!= null){
+System.out.println("We have connection to peer: " + peer.ip);
+peer.download(sfile);
+} */

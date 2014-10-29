@@ -20,12 +20,15 @@ public class PeerManager {
 	Tracker tracker;
 	Thread serverCheck;
 	Thread peerCheck;
+	boolean downloading;
 	/**The wait interval: set to 2 minutes*/
-	final int INTERVAL = 120000;
+	final int INTERVAL = 10000;//120000;
 	
 	
-	public PeerManager(int portNumber){
+	public PeerManager(int portNumber, Tracker tracker){
 		port = portNumber;
+		this.tracker = tracker;
+		downloading = false;
 		peerList = new ArrayList<Peer>(3);
 			try {server = new ServerSocket(port);
 			} catch (IOException e) {
@@ -40,9 +43,35 @@ public class PeerManager {
 		
 	}
 	
+	/**@return whether there are any peers downloading*/
+	public boolean getDownloading(){return downloading;}
+	
 	/**@return port number*/
 	public int getPort(){return port;}
-	//TODO Add in another thread to run. 
+	
+	/**
+	 * @param the file to be saved to
+	 * */
+	public void download(String outputFile) {
+		if(peerList.isEmpty()){
+			//System.err.println("There are no peers to download from.");
+			downloading = false;
+		}
+		else{
+			Peer p = peerList.get(0);
+			System.out.println("Downloading from: " + p.ip);
+			downloading = true;
+			p.download(outputFile);
+		}
+	}
+	
+	/***
+	 * 
+	 * Private classes that act as threads
+	 *
+	 */
+	
+	
 	private class PeerListener implements Runnable{
 		
 		//This constructer calls super... just like an implicit one... so it does nothing
@@ -59,7 +88,12 @@ public class PeerManager {
 				
 				if(peers == null){
 					System.err.println("There are no new peers.");
-					//make this a thread, make it sleep?
+					try {
+						Thread.sleep(INTERVAL);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 					return;
 				}
 				
@@ -67,16 +101,18 @@ public class PeerManager {
 				
 				for(Peer p : peers){
 					//check that we don't add a peer who has been added already
-					if(peerList.contains(p))
+					if(contains(p))
 						continue;
 					
 					//for Phase 2, we only connect to these peers
-					if(p.ip.equals("128.6.171.130") || p.ip.equals("128.6.171.131")){
+					else if(p.ip.equals("128.6.171.130") || p.ip.equals("128.6.171.131")){
 						if(p.connect()){
 							add(p); //This is a synchronized method
 							System.out.println("Established connection to peer: " + p.ip);
 							//p.run(); ->begins the downloading process?
 						}
+						//else
+							//System.out.println("Could not connect to: "+p.ip);
 					}
 				}
 				
@@ -96,6 +132,11 @@ public class PeerManager {
 				peerList.add((Peer)p);
 		}
 		
+		private synchronized boolean contains(Object p){
+			if(p instanceof Peer)
+				return peerList.contains((Peer)p);
+			return false;
+		}
 	}
 
 	
@@ -110,12 +151,15 @@ public class PeerManager {
 		public void run(){
 			while(true){
 				try {
+					System.out.println("Checking for inbound Connections");
 					aPeer = new Peer(server.accept(), tracker);
 					//aPeer.new connect for incoming connects
 					if(peerList.contains(aPeer))
 						continue;
-					if(aPeer.connect('i'))
+					if(aPeer.connect('i')){
+						System.out.println("Connection made with:" + aPeer.ip);
 						add(aPeer);
+					}
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -128,6 +172,5 @@ public class PeerManager {
 			if(p instanceof Peer)
 				peerList.add((Peer)p);
 		}
-	}
-	
+	}	
 }
