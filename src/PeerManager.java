@@ -154,7 +154,7 @@ public class PeerManager {
 				try {
 
 					System.out.println("Checking for inbound Connections");
-					aPeer = new Peer(server.accept(), tracker, tracker.getPeerId());
+					aPeer = new Peer(server.accept(), tracker.getPeerId());
 
 					//aPeer.new connect for incoming connects
 					if(peerList.contains(aPeer))

@@ -36,6 +36,20 @@ public class Peer implements Runnable {
 		this.bitfield = new boolean[this.torrentHandler.torrentInfo.piece_hashes.length];
 	}
 
+	/**
+	 * Connect inwards to a Peer
+	 * 	This is used when a Peer wants us to upload to it
+	 * 	The main difference between the constructors is that a socket
+	 *  has already been created
+	 *  The id will be obtained during the handshake*/
+	public Peer(Socket connection, byte[] clientID){
+		socket = connection;
+		port = socket.getLocalPort();
+		ip = socket.getInetAddress().getHostAddress();
+		
+		bitfield = new boolean[this.torrentHandler.torrentInfo.piece_hashes.length];
+	}
+
 	public boolean connect() {
 		// connect the connection to the peer
 		try {
@@ -220,19 +234,6 @@ public class Peer implements Runnable {
 	}
 	
 	//-----------------Incoming connections
-	/**
-	 * Connect inwards to a Peer
-	 * 	This is used when a Peer wants us to upload to it
-	 * 	The main difference between the constructors is that a socket
-	 *  has already been created
-	 *  The id will be obtained during the handshake*/
-	public Peer(Socket connection, Tracker tracker, byte[] clientID){
-		socket = connection;
-		port = socket.getLocalPort();
-		ip = socket.getInetAddress().getHostAddress();
-		
-		bitfield = new boolean[this.torrentHandler.torrentInfo.piece_hashes.length];
-	}
 	
 	/**
 	 * This connect method handles sockets that already have a

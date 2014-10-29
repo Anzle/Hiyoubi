@@ -57,7 +57,7 @@ public class RUBTClient {
 			System.out.println("Init tracker...");
 			
 			TorrentHandler torrentHandler = new TorrentHandler(torInfo,sfile);
-			Tracker tracker = new Tracker(torInfo, torrentHandler);
+			Tracker tracker = new Tracker(torInfo, torrentHandler, SERVER_PORT);
 			
 			PeerManager peerManager = new PeerManager(SERVER_PORT, tracker);
 			

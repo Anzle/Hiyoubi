@@ -23,10 +23,12 @@ public class Tracker {
 	private String peer_id;
 	private byte[] info_hash;
 	private TorrentHandler torrentHandler;
+	private int serverPort;
 
-	public Tracker(TorrentInfo torrentInfo, TorrentHandler torrentHandler) {
+	public Tracker(TorrentInfo torrentInfo, TorrentHandler torrentHandler, int serverPort) {
 		this.torrentInfo = torrentInfo;
 		this.torrentHandler = torrentHandler;
+		this.serverPort = serverPort;
 		/*
 		try {
 			ByteBuffer bytes = Bencoder2.getInfoBytes(torrentInfo.torrent_file_bytes);
@@ -182,9 +184,11 @@ public class Tracker {
 	/**return a byte[] of the peerId we got*/
 	public byte[] getPeerId(){return this.peer_id.getBytes();}
 	
-	public void client_info(PeerManager client){
+	public void client_info(){
 		System.out.println("client info: ");
-		System.out.println("port number: "+client.port);
+		System.out.println("port number: "+ this.serverPort);
+		System.out.println("downloaded: " + this.torrentHandler.getBytesDownloaded());
+		System.out.println("total: "+this.torrentInfo.file_length);
 		
 		// this.torrentInfo.
 	    // can implement serverSocket class 69 69

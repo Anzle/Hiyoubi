@@ -118,5 +118,22 @@ public class TorrentHandler {
 			e.printStackTrace();
 		}
 	}
+	
+	public int getBytesDownloaded(){
+		int total = 0;
+		
+		for(int i : pieces.keySet()){
+			Piece p = pieces.get(i);
+			if(p==null)
+				continue;
+			total += p.bytesCompleted();
+		}
+		
+		return total;
+	}
+	
+	public boolean isDonw(){
+		return this.done;
+	}
 
 }
