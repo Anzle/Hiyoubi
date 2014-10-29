@@ -110,7 +110,7 @@ public class PeerManager {
 		public void run(){
 			while(true){
 				try {
-					aPeer = new Peer(server.accept(), tracker);
+					aPeer = new Peer(server.accept(), tracker, tracker.getPeerId());
 					//aPeer.new connect for incoming connects
 					if(peerList.contains(aPeer))
 						continue;

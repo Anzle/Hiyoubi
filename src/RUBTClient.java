@@ -51,7 +51,8 @@ public class RUBTClient {
 			fstream.close();
 			TorrentInfo torInfo = new TorrentInfo(tbytes);
 			System.out.println("Init tracker...");
-			Tracker tracker = new Tracker(torInfo);
+			TorrentHandler torrentHandler = new TorrentHandler(torInfo,sfile);
+			Tracker tracker = new Tracker(torInfo, torrentHandler);
 			
 			Peer peer = null;
 			
@@ -84,7 +85,7 @@ public class RUBTClient {
 			
 			if(peer!= null){
 				System.out.println("We have connection to peer: " + peer.ip);
-				peer.download(sfile);
+				peer.download();
 			}
 			
 		} catch (FileNotFoundException e)
