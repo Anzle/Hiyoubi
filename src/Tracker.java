@@ -190,6 +190,9 @@ public class Tracker {
 		System.out.println("downloaded: " + this.torrentHandler.getBytesDownloaded());
 		System.out.println("total: "+this.torrentInfo.file_length);
 		
+		
+		
+		
 		// this.torrentInfo.
 	    // can implement serverSocket class 69 69
 		//implemented somewhere in the code about how much is downloaded 
