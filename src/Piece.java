@@ -10,6 +10,7 @@ public class Piece {
 	private int index;
 	private int length;
 	private byte[] hash;
+	private byte[] data = null;
 
 	private int[] blockOffsets;
 	private int[] blockLengths;
@@ -69,6 +70,21 @@ public class Piece {
 		
 	}
 	
+	public byte[] getBlock(int offset, int length){
+		if(!this.completed)
+			return null;
+		if(offset + length > this.length)
+			return null;
+		
+		byte[] block = new byte[length];
+		
+		for(int i = 0; i < length; i++){
+			block[i] = this.data[offset + length];
+		}
+		
+		return block;
+	}
+	
 	public int getLength(){
 		return this.length;
 	}
@@ -111,12 +127,23 @@ public class Piece {
 	
 	private void checkCompleted(){
 		for(int i = 0; i < this.blockOffsets.length; i++){
-			if(!blocks.containsKey(this.blockOffsets[i]))
+			if(!blocks.containsKey(this.blockOffsets[i])){
 				return;
+			}
 		}
-		if(this.isValid())
+		if(this.isValid()){
 			this.completed = true;
-		else
+			this.data = new byte[this.length];
+			for(int key : this.blocks.keySet()){
+				Block b = this.blocks.get(key);
+				int offset = b.getOffset();
+				byte[] bdata = b.getData();
+				for(int j = 0; j < bdata.length && offset + j < this.length; j++ ){
+					this.data[offset + j] = bdata[j];
+				}
+			}
+			
+		}else
 			this.blocks = new HashMap<Integer, Block>();
 	}
 

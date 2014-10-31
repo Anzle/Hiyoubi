@@ -87,6 +87,14 @@ public class TorrentHandler {
 		//System.out.println("Oops");
 	}
 	
+	public byte[] getBlockData(int index, int offset, int length){
+		Piece p = this.pieces.get(index);
+		if(p == null)
+			return null;
+
+		return p.getBlock(offset, length);
+	}
+	
 	private void saveFile() {
 		byte[] data = new byte[this.torrentInfo.file_length];
 		System.out.println("building file...");

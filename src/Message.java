@@ -121,5 +121,19 @@ public class Message {
 		
 		return msg.array();
 	}
+
+	public static byte[] pieceBuilder(int index, int offset, byte[] data) {
+
+		ByteBuffer msg = ByteBuffer.allocate(13 + data.length);
+		
+		msg.putInt(13);
+		msg.put((byte) 7);
+		msg.putInt(index);
+		msg.putInt(offset);
+		for(byte b : data)
+			msg.put(b);
+		
+		return msg.array();
+	}
 	
 }

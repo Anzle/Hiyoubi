@@ -136,7 +136,8 @@ public class Peer implements Runnable {
 						int rbegin = this.from_peer.readInt();
 						int rlength = this.from_peer.readInt();
 						// Not required for phase 1, but we need to clear the
-						// buffer
+						byte[] rdata = this.torrentHandler.getBlockData(rindex, rbegin, rlength);
+						this.sendMessage(Message.pieceBuilder(rindex,rbegin,rdata));
 						break;
 					case (byte) 7: // piece
 						int payloadLen = len - 9;
