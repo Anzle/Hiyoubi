@@ -110,6 +110,9 @@ public class RUBTClient {
 	//This function makes us Exit
 	private void gracefulExit() {
 			System.out.println("EXITING, jk");
+			//disconnect from the peers
+			//save stuff
+			//pieceout like a boss
 	}
 	
 

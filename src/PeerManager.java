@@ -37,7 +37,7 @@ public class PeerManager {
 				System.err.println("PeerManager's server has run into an issue and failed to initilize");
 			}
 			serverCheck = new Thread(new ServerListener());
-			//serverCheck.start();
+			serverCheck.start();
 			peerCheck = new Thread(new PeerListener());
 			peerCheck.start();
 			

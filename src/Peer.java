@@ -302,7 +302,7 @@ public class Peer implements Runnable {
 
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
+		download();
 	}
 
 	public boolean[] getBitfield() {
