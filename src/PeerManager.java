@@ -23,11 +23,13 @@ public class PeerManager {
 	boolean downloading;
 	/**The wait interval: set to 2 minutes*/
 	final int INTERVAL = 10000;//120000;
+	String flag;
 	
 	
-	public PeerManager(int portNumber, Tracker tracker){
+	public PeerManager(int portNumber, Tracker tracker, String flag){
 		port = portNumber;
 		this.tracker = tracker;
+		this.flag = flag;
 		downloading = false;
 		peerList = new ArrayList<Peer>(3);
 			try {server = new ServerSocket(port);
@@ -50,6 +52,7 @@ public class PeerManager {
 	public int getPort(){return port;}
 	
 	/**
+	 * @param flag 
 	 * @param the file to be saved to
 	 * */
 	public void download() {
@@ -102,8 +105,12 @@ public class PeerManager {
 				for(Peer p : peers){
 					//check that we don't add a peer who has been added already
 					if(peerList.contains(p)){
-						System.out.println("Peer List contains:" + p);
+						//System.out.println("Peer List contains:" + p);
 						continue;
+					}
+					else if(p.ip.equals(flag)){
+						if(p.connect())
+							add(p);
 					}
 					//for Phase 2, we only connect to these peers
 					else if(p.ip.equals("128.6.171.130") || p.ip.equals("128.6.171.131")){

@@ -308,5 +308,16 @@ public class Peer implements Runnable {
 	public boolean[] getBitfield() {
 		return this.bitfield;
 	}
+	/**
+	 * Checks to see if the input object is actually the same peer!!!
+	 * @param Object o instance of Peer
+	 * @return if this object is the same peer or not
+	 */
+	public boolean equals(Object o){
+		if(o instanceof Peer){
+			return ip.equals(((Peer) o).ip)?true:false; //Love the Trinary Operations
+		}
+		return false;
+	}
 
 }
