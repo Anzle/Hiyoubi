@@ -109,7 +109,9 @@ public class RUBTClient {
 	
 	//This function makes us Exit
 	private void gracefulExit() {
-			System.out.println("EXITING, jk");
+			System.out.println("EXITING");
+			peerManager.disconnect();
+			System.exit(0);
 			//disconnect from the peers
 			//save stuff
 			//pieceout like a boss
@@ -125,7 +127,7 @@ public class RUBTClient {
 
 		public void run() {
 			while(true){
-				System.out.print("Input d to download, input q to quit, input d to display text");
+				System.out.println("Input d to download, input q to quit, input d to display text");
 				String c = input.next();
 				c = c.toLowerCase();
 				switch(c){

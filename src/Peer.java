@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-public class Peer implements Runnable {
+public class Peer extends Thread {
 
 	byte[] id;
 	String ip;
@@ -22,6 +22,8 @@ public class Peer implements Runnable {
 
 	private TorrentHandler torrentHandler;
 	private byte[] clientID;
+	private long lastMessageSent;
+	private Thread keepAlive;
 	
 	/**Connect outwards to a Peer
 	 * This is used when looking to a Peer to download from them
@@ -70,15 +72,20 @@ public class Peer implements Runnable {
 			System.err.println("The handshake with: " + ip + " failed.");
 			return false;
 		}
+		//Start the clock
+		keepAlive = new Thread(new KeepAlive());
+		keepAlive.start();
 		// if both are good return true
 		return true;
 	}
 
+	@SuppressWarnings("deprecation")
 	public void download() {
 		System.out.println("Starting download with peer " + this.ip + "send intrested");
 		System.out.println(this.torrentHandler.torrentInfo.piece_hashes.length);
 		byte[] m = Message.interested();
 		this.sendMessage(m);
+		
 		try {
 			while (this.socket.isConnected()) {
 				int len = this.from_peer.readInt();
@@ -173,9 +180,11 @@ public class Peer implements Runnable {
 						System.out.println("message length: " + len);
 				}
 			}
-			socket.close();
+			
+			//socket.close();
 		} catch (IOException e) {
 			System.err.println("Peer " + this.ip + ":" + this.port + " disconnected. " + e.getMessage());
+			keepAlive.stop();
 		}
 	}
 
@@ -208,6 +217,7 @@ public class Peer implements Runnable {
 	public boolean sendMessage(byte[] message) {
 		try {
 			to_peer.write(message);
+			lastMessageSent = System.nanoTime();
 			to_peer.flush();
 		} catch (IOException e) {
 			System.err.println("Error sending message: " + message.toString() +
@@ -258,6 +268,9 @@ public class Peer implements Runnable {
 			System.err.println("The handshake with: " + ip + " failed.");
 			return false;
 		}
+		//Start the clock
+		keepAlive = new Thread(new KeepAlive());
+		keepAlive.start();
 		// if both are good return true
 		return true;
 	}
@@ -301,6 +314,9 @@ public class Peer implements Runnable {
 	}
 
 	@Override
+	/**
+	 * Begin downloading from the Peer
+	 */
 	public void run() {
 		download();
 	}
@@ -318,6 +334,38 @@ public class Peer implements Runnable {
 			return ip.equals(((Peer) o).ip)?true:false; //Love the Trinary Operations
 		}
 		return false;
+	}
+	
+	/**
+	 * End the communication with the Peer*/
+	public void disconnect(){
+		//disconnect our connections
+		try {
+			to_peer.flush();
+			to_peer.close();
+			from_peer.close();
+			socket.close();
+		} catch (IOException e) {
+			System.err.println("Closing peer:" + ip + " has somehow failed. ");
+		}
+		
+	}
+	/**
+	 * KeepAlive runs a clock that sends out a keep alive message every 2 minutes*/
+	class KeepAlive implements Runnable{
+
+		@Override
+		public void run() {
+			while(true){
+				//12 seconds * nanosecond to second -> 10^9
+				if((System.nanoTime() - lastMessageSent)  > 120*Math.pow(10, 9)){
+					sendMessage(new byte[]{});
+					System.out.println("Sending " + ip + " a keep alive message");
+				}
+			}
+			
+		}
+		
 	}
 
 }

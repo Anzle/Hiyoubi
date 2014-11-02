@@ -22,7 +22,7 @@ public class PeerManager {
 	Thread peerCheck;
 	boolean downloading;
 	/**The wait interval: set to 2 minutes*/
-	final int INTERVAL = 10000;//120000;
+	final int INTERVAL = 120000;//120000;
 	String flag;
 	
 	
@@ -61,10 +61,27 @@ public class PeerManager {
 			downloading = false;
 		}
 		else{
-			Peer p = peerList.get(0);
-			System.out.println("Downloading from: " + p.ip);
+			//Extend
+			for( Peer p: peerList){
+				System.out.println("Downloading from: " + p.ip);
+				p.start();
+			}
+			
+			/*{
+				Peer p = peerList.get(0);
+				System.out.println("Downloading from: " + p.ip);
+				downloading = true;
+				p.start();
+			}*/
+			
 			downloading = true;
-			p.download();
+		}
+	}
+	
+	public void disconnect(){
+		for( Peer p: peerList){
+			p.disconnect();
+			System.out.println("Disconnected from peer:" + p.ip);
 		}
 	}
 	
