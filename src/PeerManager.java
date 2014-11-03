@@ -78,10 +78,21 @@ public class PeerManager {
 		}
 	}
 	
+	/**
+	 * disconnect from every connected peer
+	 */
 	public void disconnect(){
 		for( Peer p: peerList){
 			p.disconnect();
 			System.out.println("Disconnected from peer:" + p.ip);
+		}
+	}
+	/**
+	 * Send a message to all connected peers
+	 */
+	public void sendMassMessage(byte[] message){
+		for(Peer p: peerList){
+			p.sendMessage(message);
 		}
 	}
 	
@@ -120,23 +131,27 @@ public class PeerManager {
 				//System.out.println("num peers is " + peers.size());
 				
 				for(Peer p : peers){
-					//check that we don't add a peer who has been added already
-					if(peerList.contains(p)){
-						//System.out.println("Peer List contains:" + p);
-						continue;
-					}
-					else if(p.ip.equals(flag)){
-						if(p.connect())
-							add(p);
-					}
-					//for Phase 2, we only connect to these peers
-					else if(p.ip.equals("128.6.171.130") || p.ip.equals("128.6.171.131")){
-						if(p.connect()){
-							add(p); //This is a synchronized method
-							//p.run(); ->begins the downloading process?
+					if(flag != null){
+						if(p.ip.equals(flag)){
+							if(p.connect())
+								add(p);
 						}
-						//else
-							//System.out.println("Could not connect to: "+p.ip);
+					}
+					else{
+							//check that we don't add a peer who has been added already
+						if(peerList.contains(p)){
+							//System.out.println("Peer List contains:" + p);
+							continue;
+						}
+							//for Phase 2, we only connect to these peers
+						else if(p.ip.equals("128.6.171.130") || p.ip.equals("128.6.171.131")){
+							if(p.connect()){
+								add(p); //This is a synchronized method
+								//p.run(); ->begins the downloading process?
+							}
+							//else
+								//System.out.println("Could not connect to: "+p.ip);
+						}
 					}
 				}
 				
