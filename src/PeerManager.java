@@ -134,13 +134,17 @@ public class PeerManager {
 					else if(p.ip.equals(flag)){
 						if(p.connect()){
 							add(p);
-							p.start();
+							System.out.println("Downloading Connection from: " + p.ip);
+							p.download();
+							
 						}
 					}
 					//for Phase 2, we only connect to these peers
 					else if(p.ip.equals("128.6.171.130") || p.ip.equals("128.6.171.131")){
 						if(p.connect()){
+							System.out.println("Downloading Connection from: " + p.ip);
 							add(p); //This is a synchronized method
+							p.download();
 						}
 						//else
 							//System.out.println("Could not connect to: "+p.ip);
@@ -192,7 +196,7 @@ public class PeerManager {
 					if(peerList.contains(aPeer))
 						continue;
 					if(aPeer.connect('i')){
-						System.out.println("Connection made with:" + aPeer.ip);
+						System.out.println("Uploading Connection made with:" + aPeer.ip);
 						add(aPeer);
 						//aPeer.start();
 					}

@@ -88,7 +88,7 @@ public class Peer extends Thread {
 		byte[] m = Message.interested();
 		this.sendMessage(m);
 		//run();
-		try {
+	/*	try {
 			while (this.socket.isConnected()) {
 				int len = this.from_peer.readInt();
 				//System.out.println("read init!");
@@ -188,7 +188,7 @@ public class Peer extends Thread {
 		} catch (IOException e) {
 			System.err.println("Peer " + this.ip + ":" + this.port + " disconnected. " + e.getMessage());
 			
-		}
+		}*/
 	}
 
 	/**
@@ -323,9 +323,22 @@ public class Peer extends Thread {
 	 * Begin downloading from the Peer
 	 */
 	public void run() {
+		while (true){
+			try {
+				if(from_peer.available()>0)
+					interpertMessage();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				System.err.println("Your new run is broken.");
+				e.printStackTrace();
+			}
+		}
+	}
+
+	private void interpertMessage() {
 		try {
 			while (this.socket.isConnected()) {
-				int len = this.from_peer.readInt();
+				int len = from_peer.readInt();
 				System.out.println("read init!");
 				System.out.println(len);
 				if (len > 0) {
@@ -417,12 +430,12 @@ public class Peer extends Thread {
 					else
 						System.out.println("message length: " + len);
 				}
-				
+			}
 				//socket.close();
-				}
 			}catch (IOException e) {
 				System.err.println("Peer " + this.ip + ":" + this.port + " disconnected. " + e.getMessage());
 			}
+		
 	}
 
 	public boolean[] getBitfield() {
