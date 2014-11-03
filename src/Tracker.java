@@ -3,8 +3,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
@@ -24,7 +22,6 @@ public class Tracker {
 	private final char[] HEXCHARS = "0123456789ABCDEF".toCharArray();
 	private String peer_id;
 	private byte[] info_hash;
-	private String ih_str;
 	private TorrentHandler torrentHandler;
 	private int serverPort;
 
@@ -50,7 +47,7 @@ public class Tracker {
 	 * 		The responce from the HTTP Server*/
 	private String queryServer() throws IOException {
 
-		ih_str = "";
+		String ih_str = "";
 		byte[] info_hash = this.torrentInfo.info_hash.array();
 		for (int i = 0; i < info_hash.length; i++) {
 			
@@ -193,31 +190,7 @@ public class Tracker {
 		System.out.println("downloaded: " + this.torrentHandler.getBytesDownloaded());
 		System.out.println("total: "+this.torrentInfo.file_length);
 		
-		//Code pulled from tracker GET code above
-		//Still needs to be tweaked
-		//After it is written, must place it in a thread so it can update evry interval
-		//need to get the interval from tracker...
-		String query = "announce?info_hash=" + ih_str + "&peer_id=" + this.peer_id + "&port=" +serverPort + "&left=" + 
-				this.torrentInfo.file_length + 
-				"&uploaded=0&downloaded=" + this.torrentHandler.getBytesDownloaded();
-		URL urlobj;
 		
-		try {
-			urlobj = new URL(this.torrentInfo.announce_url, query);
-			HttpURLConnection uconnect = (HttpURLConnection) urlobj
-				.openConnection();
-		uconnect.setRequestMethod("POST");
-		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ProtocolException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
 		
 		
 		// this.torrentInfo.
