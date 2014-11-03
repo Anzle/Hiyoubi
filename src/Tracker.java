@@ -26,6 +26,8 @@ public class Tracker {
 	private TorrentHandler torrentHandler;
 	private int serverPort;
 	private String ih_str;
+	private HashMap peer_info;
+	private int minInterval = 120;
 
 	public Tracker(TorrentInfo torrentInfo, TorrentHandler torrentHandler, int serverPort) {
 		this.torrentInfo = torrentInfo;
@@ -96,7 +98,7 @@ public class Tracker {
 
 		}
 		//System.out.println(peer_id +"\n" +response.toString());
-		return response.toString();
+		return response.toString(); //html response 
 	}
 
 	/**
@@ -113,7 +115,7 @@ public class Tracker {
 		}
 		HashMap results = null;
 		try {
-			Object o = Bencoder2.decode(response.getBytes());
+			Object o = Bencoder2.decode(response.getBytes()); //this is done
 			
 			if (o instanceof HashMap) {
 				results = (HashMap) o;
@@ -128,11 +130,19 @@ public class Tracker {
 			return null;
 		}
 
+		ByteBuffer i = ByteBuffer.wrap("min interval".getBytes());
+		
+		Object mini_o = results.get(i);
+		if(mini_o != null && mini_o instanceof Integer){
+			this.minInterval = (Integer) mini_o;
+		}
+		
 		ByteBuffer b = ByteBuffer.wrap("peers".getBytes());
 
 		ByteBuffer peer_ip_key = ByteBuffer.wrap("ip".getBytes());
 		ByteBuffer peer_port_key = ByteBuffer.wrap("port".getBytes());
 		ByteBuffer peer_id_key = ByteBuffer.wrap("peer id".getBytes());
+		
 
 		Object peer_list_o = results.get(b);
 
@@ -153,7 +163,7 @@ public class Tracker {
 				continue;
 			}
 
-			HashMap peer_info = (HashMap) peer_info_o;
+			peer_info = (HashMap) peer_info_o;
 
 			Object port_o = peer_info.get(peer_port_key);
 			Object ip_o = peer_info.get(peer_ip_key);
@@ -245,11 +255,15 @@ public class Tracker {
 	public TorrentHandler getTorrentHandler(){
 		return this.torrentHandler;
 	}
+	
+	/*
 	class queryServer_thread implements Runnable{
 		
 		public void run() {
 			
-			long interval= 4; //need to change this to the interval from URl
+			ByteBuffer peer_interval_key = ByteBuffer.wrap("interval".getBytes());
+			
+			long interval= peer_info; //need to change this to the interval from URl
 			
 			while(true){
 			
@@ -269,6 +283,7 @@ public class Tracker {
 
 
 	}
+	*/
 }
 
 
