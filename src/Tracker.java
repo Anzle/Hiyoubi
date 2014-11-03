@@ -245,13 +245,25 @@ public class Tracker {
 	public TorrentHandler getTorrentHandler(){
 		return this.torrentHandler;
 	}
-	class ClientInfo implements Runnable{
-
-
+	class queryServer_thread implements Runnable{
+		
 		public void run() {
-			client_info();
+			
+			long interval= 4; //need to change this to the interval from URl
+			
+			while(true){
+			
+				try {
+					queryServer();
+					Thread.sleep(interval);
+					
+				
+				
+				} catch (IOException | InterruptedException e) {
+					e.printStackTrace();
+				}
 		
-		
+			}
 		}
 	
 
