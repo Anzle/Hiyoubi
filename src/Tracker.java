@@ -82,7 +82,7 @@ public class Tracker {
 		HttpURLConnection uconnect = (HttpURLConnection) urlobj
 				.openConnection();
 		uconnect.setRequestMethod("GET");
-
+		
 		BufferedReader in = new BufferedReader(new InputStreamReader(
 				uconnect.getInputStream()));
 
@@ -95,7 +95,7 @@ public class Tracker {
 			response.append(inline);
 
 		}
-		System.out.println(peer_id +"/n" +response.toString());
+		//System.out.println(peer_id +"\n" +response.toString());
 		return response.toString();
 	}
 

@@ -101,6 +101,8 @@ public class RUBTClient {
 		int count = 0;
 			while(!peerManager.downloading && count < 50){
 				peerManager.download();
+				if(peerManager.downloading)
+						return;
 				count++;
 			}
 		if(count>=50)
