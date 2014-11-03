@@ -24,6 +24,7 @@ public class Tracker {
 	private byte[] info_hash;
 	private TorrentHandler torrentHandler;
 	private int serverPort;
+	private String ih_str;
 
 	public Tracker(TorrentInfo torrentInfo, TorrentHandler torrentHandler, int serverPort) {
 		this.torrentInfo = torrentInfo;
@@ -47,7 +48,7 @@ public class Tracker {
 	 * 		The responce from the HTTP Server*/
 	private String queryServer() throws IOException {
 
-		String ih_str = "";
+		ih_str = "";
 		byte[] info_hash = this.torrentInfo.info_hash.array();
 		for (int i = 0; i < info_hash.length; i++) {
 			
@@ -191,7 +192,20 @@ public class Tracker {
 		System.out.println("total: "+this.torrentInfo.file_length);
 		
 		
+		//All of this code must be updated, pulled from above
+		//Need to add in the downloaded bytes
+		//need to add in the events
+		//need the interval, then need to make this into a thread
+		//need to make this send out various messages... use switch
+		String query = "announce?info_hash=" + ih_str + "&peer_id=" + this.peer_id + "&port=6881&left=" + this.torrentInfo.file_length + "&uploaded=0&downloaded=0";
+		URL urlobj;
 		
+		try{
+		urlobj = new URL(this.torrentInfo.announce_url, query);
+		HttpURLConnection uconnect = (HttpURLConnection) urlobj
+				.openConnection();
+		uconnect.setRequestMethod("GET");
+		}catch(Exception e){}
 		
 		// this.torrentInfo.
 	    // can implement serverSocket class 69 69
