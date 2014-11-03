@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
@@ -188,11 +189,13 @@ public class Tracker {
 	public byte[] getPeerId(){return this.peer_id.getBytes();}
 	
 	public void client_info(){
-		System.out.println("client info: ");
-		System.out.println("port number: "+ this.serverPort);
-		System.out.println("downloaded: " + this.torrentHandler.getBytesDownloaded());
-		System.out.println("uploaded: " + this.torrentHandler.getBytesUploaded());
-		System.out.println("total: "+this.torrentInfo.file_length);
+		
+		
+		String one="client info: ";
+		String two="port number: "+ this.serverPort;
+		String three="downloaded: " + this.torrentHandler.getBytesDownloaded();
+		String four="uploaded: " + this.torrentHandler.getBytesUploaded();
+		String five= "total: "+this.torrentInfo.file_length;
 		
 		
 		//All of this code must be updated, pulled from above
@@ -200,20 +203,40 @@ public class Tracker {
 		//need to add in the events
 		//need the interval, then need to make this into a thread
 		//need to make this send out various messages... use switch
+		
+		
 		String query = "announce?info_hash=" + ih_str + "&peer_id=" + this.peer_id + "&port=6881&left=" + this.torrentInfo.file_length + "&uploaded=0&downloaded=0";
 		URL urlobj;
 		
 		try{
 		urlobj = new URL(this.torrentInfo.announce_url, query);
-		HttpURLConnection uconnect = (HttpURLConnection) urlobj
-				.openConnection();
-		uconnect.setRequestMethod("GET");
+		HttpURLConnection uconnect = (HttpURLConnection) urlobj.openConnection();
+		uconnect.setDoOutput(true);
+		uconnect.setDoInput(true);
+		uconnect.setInstanceFollowRedirects(false);
+		uconnect.setRequestMethod("POST");
+		
+		DataOutputStream publish=new DataOutputStream(uconnect.getOutputStream());
+		publish.writeBytes(one);
+		publish.writeBytes(two);
+		publish.writeBytes(three);
+		publish.writeBytes(four);
+		publish.writeBytes(five);
+		
+		publish.flush();
+		publish.close();
+		uconnect.disconnect();
+		
 		}catch(Exception e){}
 		
 		// this.torrentInfo.
 	    // can implement serverSocket class 69 69
 		//implemented somewhere in the code about how much is downloaded 
 		//take in an argument for the port number which continues to listen and then implement with a server socket to get the info
+	
+	
+	
+	
 	}
 	
 	public TorrentHandler getTorrentHandler(){
