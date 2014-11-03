@@ -16,6 +16,7 @@ public class TorrentHandler {
 	private int completedPieceCount = 0;
 	private String outputFile;
 	private boolean done = false;
+	private PeerManager peerManager;
 	public TorrentHandler(TorrentInfo torrentInfo, String outputFile){
 		
 		this.torrentInfo = torrentInfo;
@@ -54,6 +55,7 @@ public class TorrentHandler {
 				saveFile();
 				this.done  = true;
 			}
+			this.peerManager.notifyPeersPieceCompleted(piece.getIndex());
 			
 		}
 	}
@@ -142,6 +144,10 @@ public class TorrentHandler {
 	
 	public boolean isDonw(){
 		return this.done;
+	}
+
+	public void setPeerManager(PeerManager peerManager) {
+		this.peerManager = peerManager;
 	}
 
 }

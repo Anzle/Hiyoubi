@@ -114,7 +114,7 @@ public class Message {
 	}
 
 	public static byte[] interested() {
-		ByteBuffer msg = ByteBuffer.allocate(17);
+		ByteBuffer msg = ByteBuffer.allocate(6);
 		
 		msg.putInt(1);
 		msg.put((byte) 2);
@@ -132,6 +132,17 @@ public class Message {
 		msg.putInt(offset);
 		for(byte b : data)
 			msg.put(b);
+		
+		return msg.array();
+	}
+
+	public static byte[] haveBuilder(int index) {
+
+		ByteBuffer msg = ByteBuffer.allocate(9);
+		
+		msg.putInt(5);
+		msg.put((byte) 4);
+		msg.putInt(index);
 		
 		return msg.array();
 	}

@@ -41,7 +41,8 @@ public class PeerManager {
 			peerCheck = new Thread(new PeerListener());
 			peerCheck.start();
 			
-			
+		TorrentHandler th = this.tracker.getTorrentHandler();
+		th.setPeerManager(this);
 		
 	}
 	
@@ -198,6 +199,14 @@ public class PeerManager {
 		private synchronized void add(Object p){
 			if(p instanceof Peer)
 				peerList.add((Peer)p);
+		}
+	}
+
+
+	public void notifyPeersPieceCompleted(int index) {
+		byte[] m = Message.haveBuilder(index);
+		for(Peer p : this.peerList){
+			p.sendMessage(m);
 		}
 	}	
 }

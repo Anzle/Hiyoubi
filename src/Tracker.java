@@ -212,5 +212,9 @@ public class Tracker {
 		//implemented somewhere in the code about how much is downloaded 
 		//take in an argument for the port number which continues to listen and then implement with a server socket to get the info
 	}
+	
+	public TorrentHandler getTorrentHandler(){
+		return this.torrentHandler;
+	}
 
 }
