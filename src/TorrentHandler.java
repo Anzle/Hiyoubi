@@ -17,6 +17,7 @@ public class TorrentHandler {
 	private String outputFile;
 	private boolean done = false;
 	private PeerManager peerManager;
+	private int uploadedTotal;
 	public TorrentHandler(TorrentInfo torrentInfo, String outputFile){
 		
 		this.torrentInfo = torrentInfo;
@@ -93,8 +94,10 @@ public class TorrentHandler {
 		Piece p = this.pieces.get(index);
 		if(p == null)
 			return null;
+		byte[] data = p.getBlock(offset, length);
 
-		return p.getBlock(offset, length);
+		this.uploadedTotal+=data.length;
+		return data;
 	}
 	
 	private void saveFile() {
@@ -140,6 +143,10 @@ public class TorrentHandler {
 		}
 		
 		return total;
+	}
+	
+	public int getBytesUploaded(){
+		return uploadedTotal;
 	}
 	
 	public boolean isDonw(){

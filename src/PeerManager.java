@@ -95,7 +95,7 @@ public class PeerManager {
 	
 	private class PeerListener implements Runnable{
 		
-		//This constructer calls super... just like an implicit one... so it does nothing
+		//This constructor calls super... just like an implicit one... so it does nothing
 		public PeerListener(){super();}
 		
 		/**

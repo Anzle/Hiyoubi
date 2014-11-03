@@ -75,6 +75,8 @@ public class Tracker {
 		URL urlobj;
 		
 		urlobj = new URL(this.torrentInfo.announce_url, query);
+		
+		System.out.println(urlobj);
 		HttpURLConnection uconnect = (HttpURLConnection) urlobj
 				.openConnection();
 		uconnect.setRequestMethod("GET");
@@ -189,6 +191,7 @@ public class Tracker {
 		System.out.println("client info: ");
 		System.out.println("port number: "+ this.serverPort);
 		System.out.println("downloaded: " + this.torrentHandler.getBytesDownloaded());
+		System.out.println("uploaded: " + this.torrentHandler.getBytesUploaded());
 		System.out.println("total: "+this.torrentInfo.file_length);
 		
 		
