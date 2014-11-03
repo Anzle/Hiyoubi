@@ -77,7 +77,7 @@ public class Tracker {
 		
 		urlobj = new URL(this.torrentInfo.announce_url, query);
 		
-		System.out.println(urlobj);
+		//System.out.println(urlobj);
 		HttpURLConnection uconnect = (HttpURLConnection) urlobj
 				.openConnection();
 		uconnect.setRequestMethod("GET");

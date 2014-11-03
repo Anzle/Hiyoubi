@@ -22,8 +22,9 @@ public class PeerManager {
 	Thread peerCheck;
 	boolean downloading;
 	/**The wait interval: set to 2 minutes*/
-	final int INTERVAL = 120000;//120000;
+	final int INTERVAL = 10000;//120000;
 	String flag;
+	TorrentHandler th;
 	
 	
 	public PeerManager(int portNumber, Tracker tracker, String flag){
@@ -32,17 +33,21 @@ public class PeerManager {
 		this.flag = flag;
 		downloading = false;
 		peerList = new ArrayList<Peer>(3);
-			try {server = new ServerSocket(port);
+		th = this.tracker.getTorrentHandler();
+		th.setPeerManager(this);
+		
+		peerCheck = new Thread(new PeerListener());
+		peerCheck.start();
+		
+		try {
+				server = new ServerSocket(port);
+				serverCheck = new Thread(new ServerListener());
+				serverCheck.start();
 			} catch (IOException e) {
 				System.err.println("PeerManager's server has run into an issue and failed to initilize");
 			}
-			serverCheck = new Thread(new ServerListener());
-			serverCheck.start();
-			peerCheck = new Thread(new PeerListener());
-			peerCheck.start();
+
 			
-		TorrentHandler th = this.tracker.getTorrentHandler();
-		th.setPeerManager(this);
 		
 	}
 	
@@ -65,7 +70,7 @@ public class PeerManager {
 			//Extend
 			for( Peer p: peerList){
 				System.out.println("Downloading from: " + p.ip);
-				p.start();
+				p.download();
 			}
 			
 			/*{
@@ -127,14 +132,15 @@ public class PeerManager {
 						continue;
 					}
 					else if(p.ip.equals(flag)){
-						if(p.connect())
+						if(p.connect()){
 							add(p);
+							p.start();
+						}
 					}
 					//for Phase 2, we only connect to these peers
 					else if(p.ip.equals("128.6.171.130") || p.ip.equals("128.6.171.131")){
 						if(p.connect()){
 							add(p); //This is a synchronized method
-							//p.run(); ->begins the downloading process?
 						}
 						//else
 							//System.out.println("Could not connect to: "+p.ip);
@@ -155,7 +161,8 @@ public class PeerManager {
 		private synchronized void add(Peer p){
 			//if(p instanceof Peer)
 				peerList.add((Peer)p);
-		System.out.println("Established connection to peer: " + p.ip);
+				p.start();
+				System.out.println("Established connection to peer: " + p.ip);
 		}
 		
 		private synchronized boolean contains(Object p){
@@ -179,7 +186,7 @@ public class PeerManager {
 				try {
 
 					System.out.println("Checking for inbound Connections");
-					aPeer = new Peer(server.accept(), tracker.getPeerId());
+					aPeer = new Peer(server.accept(), th, tracker.getPeerId());
 
 					//aPeer.new connect for incoming connects
 					if(peerList.contains(aPeer))
@@ -187,6 +194,7 @@ public class PeerManager {
 					if(aPeer.connect('i')){
 						System.out.println("Connection made with:" + aPeer.ip);
 						add(aPeer);
+						//aPeer.start();
 					}
 				} catch (IOException e) {
 					// TODO Auto-generated catch block

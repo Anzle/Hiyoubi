@@ -44,11 +44,13 @@ public class Peer extends Thread {
 	 * 	The main difference between the constructors is that a socket
 	 *  has already been created
 	 *  The id will be obtained during the handshake*/
-	public Peer(Socket connection, byte[] clientID){
+	public Peer(Socket connection,TorrentHandler torrentHandler, byte[] clientID){
 		socket = connection;
 		port = socket.getLocalPort();
 		ip = socket.getInetAddress().getHostAddress();
-		
+		id = new byte[68];
+		this.torrentHandler = torrentHandler;
+		this.clientID = clientID;
 		bitfield = new boolean[this.torrentHandler.torrentInfo.piece_hashes.length];
 	}
 
@@ -79,17 +81,18 @@ public class Peer extends Thread {
 		return true;
 	}
 
-	@SuppressWarnings("deprecation")
+	//@SuppressWarnings("deprecation")
 	public void download() {
-		System.out.println("Starting download with peer " + this.ip + "send intrested");
+		System.out.println("Starting download with peer " + this.ip + " send intrested");
 		System.out.println(this.torrentHandler.torrentInfo.piece_hashes.length);
 		byte[] m = Message.interested();
 		this.sendMessage(m);
-		
+		//run();
 		try {
 			while (this.socket.isConnected()) {
 				int len = this.from_peer.readInt();
 				//System.out.println("read init!");
+				//System.out.println(len);
 				if (len > 0) {
 					byte id = this.from_peer.readByte();
 					//System.out.println("messageid: " + ((int) (id)));
@@ -184,7 +187,7 @@ public class Peer extends Thread {
 			//socket.close();
 		} catch (IOException e) {
 			System.err.println("Peer " + this.ip + ":" + this.port + " disconnected. " + e.getMessage());
-			keepAlive.stop();
+			
 		}
 	}
 
@@ -234,6 +237,8 @@ public class Peer extends Thread {
 	 */
 	public byte[] recieveMessage() {
 		byte[] responce = new byte[68];
+		for(int i=0;i<responce.length;i++)
+			responce[i] = 0;
 		try {
 			this.from_peer.readFully(responce);
 		} catch (IOException e) {
@@ -318,7 +323,106 @@ public class Peer extends Thread {
 	 * Begin downloading from the Peer
 	 */
 	public void run() {
-		download();
+		try {
+			while (this.socket.isConnected()) {
+				int len = this.from_peer.readInt();
+				System.out.println("read init!");
+				System.out.println(len);
+				if (len > 0) {
+					byte id = this.from_peer.readByte();
+					System.out.println("messageid: " + ((int) (id)));
+					switch (id) {
+					case (byte) 0: // choke
+						this.peer_choking = true;
+						System.out.println("choked");
+						break;
+					case (byte) 1: // unchoke
+						this.peer_choking = false;
+						System.out.println("un choked");
+						this.torrentHandler.requestNewBlock(this);
+						break;
+					case (byte) 2: // interested
+						this.peer_interested = true;
+						System.out.println("interested");
+						break;
+					case (byte) 3: // not interested
+						this.peer_interested = false;
+						System.out.println("not interested");
+						break;
+					case (byte) 4: // have
+						int piece = this.from_peer.readInt();
+						System.out.println("have " + piece);
+						if (piece >= 0 && piece < bitfield.length)
+							bitfield[piece] = true;
+						break;
+					case (byte) 5: // bit field
+						byte[] payload = new byte[len - 1];
+						this.from_peer.readFully(payload);
+						boolean[] bitfield = new boolean[payload.length * 8];
+						int boolIndex = 0;
+						for (int byteIndex = 0; byteIndex < payload.length; ++byteIndex) {
+							for (int bitIndex = 7; bitIndex >= 0; --bitIndex) {
+								if (boolIndex >= payload.length * 8) {
+									// Bad to return within a loop, but it's the easiest way
+									continue;
+								}
+
+								bitfield[boolIndex++] = (payload[byteIndex] >> bitIndex & 0x01) == 1 ? true: false;
+							}
+						}
+						this.bitfield = bitfield;
+						//System.out.println("bitfield recieved");
+						//System.out.println("building request");
+						this.torrentHandler.requestNewBlock(this);
+						break;
+					case (byte) 6: // request
+						//System.out.println("request");
+						int rindex = this.from_peer.readInt();
+						int rbegin = this.from_peer.readInt();
+						int rlength = this.from_peer.readInt();
+						// Not required for phase 1, but we need to clear the
+						byte[] rdata = this.torrentHandler.getBlockData(rindex, rbegin, rlength);
+						this.sendMessage(Message.pieceBuilder(rindex,rbegin,rdata));
+						break;
+					case (byte) 7: // piece
+						int payloadLen = len - 9;
+						//System.out.println("loading ("+payloadLen+")...");
+						int bindex = this.from_peer.readInt();
+						int boffset = this.from_peer.readInt();
+						byte[] data = new byte[payloadLen];
+						for(int i = 0; i < payloadLen; i++){
+							//System.out.println(i);
+							data[i] = this.from_peer.readByte();
+						}
+						System.out.println("piece " + bindex + "-" + boffset);
+						Block b = new Block(bindex, boffset, data);
+						this.torrentHandler.saveBlock(b, this);
+						this.torrentHandler.requestNewBlock(this);
+						break;
+					case (byte) 8: // cancel
+						System.out.println("cancel");
+						int cindex = this.from_peer.readInt();
+						int cbegin = this.from_peer.readInt();
+						int clength = this.from_peer.readInt();
+						// Not required for phase 1, but we need to clear the
+						// buffer
+						break;
+					default:
+						System.out.println("message invalid");
+						break;
+					}
+				}else{
+					if(len == 0)
+						System.out.println("keep alive");
+					else
+						System.out.println("message length: " + len);
+				}
+				
+				//socket.close();
+				}
+			}catch (IOException e) {
+				System.err.println("Peer " + this.ip + ":" + this.port + " disconnected. " + e.getMessage());
+			}
 	}
 
 	public boolean[] getBitfield() {

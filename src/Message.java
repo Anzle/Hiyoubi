@@ -36,6 +36,7 @@ public class Message {
 				for(int i = 0; i < 20; i++){
 					handshake[28 + i] = info_hash[i];
 				}
+				//System.out.println(peerId);
 				//Set the next bytes equal to the PeerID
 				for(int i = 0; i < peerId.length; i++){
 					handshake[48 + i] = peerId[i];
