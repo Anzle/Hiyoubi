@@ -73,7 +73,7 @@ public class Tracker {
 
 		// String query = "announce?info_hash=" + ih_str + "&peer_id=" + host.getPeerID() + "&port=" + host.getPort() + "&left=" + torinfo.file_length + "&uploaded=0&downloaded=0";
 
-		String query = "announce?info_hash=" + ih_str + "&peer_id=" + this.peer_id + "&port=6881&left=" + this.torrentInfo.file_length + "&uploaded=0&downloaded=0";
+		String query = "announce?info_hash=" + ih_str + "&peer_id=" + this.peer_id + "&port="+this.serverPort+"&left=" + this.torrentInfo.file_length + "&uploaded="+this.torrentHandler.getBytesUploaded()+ "&downloaded="+this.torrentHandler.getBytesDownloaded();
 		URL urlobj;
 		
 		urlobj = new URL(this.torrentInfo.announce_url, query);
@@ -87,18 +87,6 @@ public class Tracker {
 				uconnect.getInputStream()));
 
 		StringBuffer response = new StringBuffer();
-		
-		//-------- trying something new
-		DataOutputStream publish=new DataOutputStream(uconnect.getOutputStream());
-		publish.writeBytes("client info: ");
-		publish.writeBytes("port number: "+ this.serverPort);
-		publish.writeBytes("downloaded: " + this.torrentHandler.getBytesDownloaded());
-		publish.writeBytes("uploaded: " + this.torrentHandler.getBytesUploaded());
-		publish.writeBytes("total: "+this.torrentInfo.file_length);
-		
-		publish.flush();
-		publish.close();
-		//---------
 		
 
 		String inline = "";
