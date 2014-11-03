@@ -31,6 +31,14 @@ public class Tracker {
 		this.torrentInfo = torrentInfo;
 		this.torrentHandler = torrentHandler;
 		this.serverPort = serverPort;
+		
+		StringBuilder sb = new StringBuilder();
+		Random random = new Random();
+		for (int i = 0; i < 20; i++) {
+		    char c = this.HEXCHARS[random.nextInt(this.HEXCHARS.length)];
+		    sb.append(c);
+		}
+		this.peer_id = sb.toString();
 		/*
 		try {
 			ByteBuffer bytes = Bencoder2.getInfoBytes(torrentInfo.torrent_file_bytes);
@@ -61,14 +69,7 @@ public class Tracker {
 		
 		/*Save the info hash for later usage as an array of bytes*/
 		this.info_hash = this.torrentInfo.info_hash.array();
-		
-		StringBuilder sb = new StringBuilder();
-		Random random = new Random();
-		for (int i = 0; i < 20; i++) {
-		    char c = this.HEXCHARS[random.nextInt(this.HEXCHARS.length)];
-		    sb.append(c);
-		}
-		this.peer_id = sb.toString();
+	
 
 		// String query = "announce?info_hash=" + ih_str + "&peer_id=" + host.getPeerID() + "&port=" + host.getPort() + "&left=" + torinfo.file_length + "&uploaded=0&downloaded=0";
 
@@ -106,6 +107,7 @@ public class Tracker {
 			response.append(inline);
 
 		}
+		System.out.println(peer_id +"/n" +response.toString());
 		return response.toString();
 	}
 
