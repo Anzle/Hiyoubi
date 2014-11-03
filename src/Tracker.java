@@ -86,6 +86,19 @@ public class Tracker {
 				uconnect.getInputStream()));
 
 		StringBuffer response = new StringBuffer();
+		
+		//-------- trying something new
+		DataOutputStream publish=new DataOutputStream(uconnect.getOutputStream());
+		publish.writeBytes("client info: ");
+		publish.writeBytes("port number: "+ this.serverPort);
+		publish.writeBytes("downloaded: " + this.torrentHandler.getBytesDownloaded());
+		publish.writeBytes("uploaded: " + this.torrentHandler.getBytesUploaded());
+		publish.writeBytes("total: "+this.torrentInfo.file_length);
+		
+		publish.flush();
+		publish.close();
+		//---------
+		
 
 		String inline = "";
 		while ((inline = in.readLine()) != null) {
@@ -214,7 +227,7 @@ public class Tracker {
 		uconnect.setDoOutput(true);
 		uconnect.setDoInput(true);
 		uconnect.setInstanceFollowRedirects(false);
-		uconnect.setRequestMethod("POST");
+		uconnect.setRequestMethod("GET");
 		
 		DataOutputStream publish=new DataOutputStream(uconnect.getOutputStream());
 		publish.writeBytes(one);
@@ -242,5 +255,20 @@ public class Tracker {
 	public TorrentHandler getTorrentHandler(){
 		return this.torrentHandler;
 	}
+	class ClientInfo implements Runnable{
 
+
+		public void run() {
+			client_info();
+		
+		
+		}
+	
+
+
+	}
 }
+
+
+
+
