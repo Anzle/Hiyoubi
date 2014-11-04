@@ -127,11 +127,11 @@ public class RUBTClient {
 
 		public void run() {
 			while(true){
-				System.out.println("Input d to download, input q to quit, input d to display text");
+				System.out.println("input q to quit, input d to display text");
 				String c = input.next();
 				c = c.toLowerCase();
 				switch(c){
-				case "d": download();break;
+				//case "d": download();break;
 				case "q": gracefulExit();break;
 				case "t": System.out.println("I like Scarves");break;
 				}

@@ -22,7 +22,7 @@ public class PeerManager {
 	Thread peerCheck;
 	boolean downloading;
 	/**The wait interval: set to 2 minutes*/
-	final int INTERVAL = 120000;//120000;
+	final int INTERVAL = 10000;//120000;
 	String flag;
 	
 	
@@ -133,7 +133,7 @@ public class PeerManager {
 					else if(p.ip.equals("128.6.171.130") || p.ip.equals("128.6.171.131")){
 						if(p.connect()){
 							add(p); //This is a synchronized method
-							//p.run(); ->begins the downloading process?
+							p.run();// ->begins the downloading process?
 						}
 						//else
 							//System.out.println("Could not connect to: "+p.ip);
