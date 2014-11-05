@@ -69,9 +69,6 @@ public class Tracker {
 		this.peer_id = sb.toString();
 		
 		this.event=event;
-		
-		
-		
 	}
 
 	/**
@@ -97,6 +94,15 @@ public class Tracker {
 		// String query = "announce?info_hash=" + ih_str + "&peer_id=" + host.getPeerID() + "&port=" + host.getPort() + "&left=" + torinfo.file_length + "&uploaded=0&downloaded=0";
 
 		String query=null;
+		
+		//this makes sure that event is either started, completed, or stopped
+		
+		if((this.event.equalsIgnoreCase("started")) || (this.event.equalsIgnoreCase("completed")) || (this.event.equalsIgnoreCase("stopped")) ){
+			//does nothing if its one of the strings stated above
+		}else{
+			this.event=null;
+		}
+		
 		
 		if(this.event==null){
 			query = "announce?info_hash=" + ih_str + "&peer_id=" + this.peer_id + "&port="+this.serverPort+"&left=" + this.torrentInfo.file_length + "&uploaded="+this.torrentHandler.getBytesUploaded()+ "&downloaded="+this.torrentHandler.getBytesDownloaded();
