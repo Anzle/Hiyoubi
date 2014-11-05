@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
@@ -30,6 +31,14 @@ public class Tracker {
 		this.torrentInfo = torrentInfo;
 		this.torrentHandler = torrentHandler;
 		this.serverPort = serverPort;
+		
+		StringBuilder sb = new StringBuilder();
+		Random random = new Random();
+		for (int i = 0; i < 20; i++) {
+		    char c = this.HEXCHARS[random.nextInt(this.HEXCHARS.length)];
+		    sb.append(c);
+		}
+		this.peer_id = sb.toString();
 		/*
 		try {
 			ByteBuffer bytes = Bencoder2.getInfoBytes(torrentInfo.torrent_file_bytes);
@@ -60,29 +69,25 @@ public class Tracker {
 		
 		/*Save the info hash for later usage as an array of bytes*/
 		this.info_hash = this.torrentInfo.info_hash.array();
-		
-		StringBuilder sb = new StringBuilder();
-		Random random = new Random();
-		for (int i = 0; i < 20; i++) {
-		    char c = this.HEXCHARS[random.nextInt(this.HEXCHARS.length)];
-		    sb.append(c);
-		}
-		this.peer_id = sb.toString();
+	
 
 		// String query = "announce?info_hash=" + ih_str + "&peer_id=" + host.getPeerID() + "&port=" + host.getPort() + "&left=" + torinfo.file_length + "&uploaded=0&downloaded=0";
 
-		String query = "announce?info_hash=" + ih_str + "&peer_id=" + this.peer_id + "&port=6881&left=" + this.torrentInfo.file_length + "&uploaded=0&downloaded=0";
+		String query = "announce?info_hash=" + ih_str + "&peer_id=" + this.peer_id + "&port="+this.serverPort+"&left=" + this.torrentInfo.file_length + "&uploaded="+0+ "&downloaded="+this.torrentHandler.getBytesDownloaded();
 		URL urlobj;
 		
 		urlobj = new URL(this.torrentInfo.announce_url, query);
+		
+		//System.out.println(urlobj);
 		HttpURLConnection uconnect = (HttpURLConnection) urlobj
 				.openConnection();
 		uconnect.setRequestMethod("GET");
-
+		
 		BufferedReader in = new BufferedReader(new InputStreamReader(
 				uconnect.getInputStream()));
 
 		StringBuffer response = new StringBuffer();
+		
 
 		String inline = "";
 		while ((inline = in.readLine()) != null) {
@@ -90,6 +95,7 @@ public class Tracker {
 			response.append(inline);
 
 		}
+		//System.out.println(peer_id +"\n" +response.toString());
 		return response.toString();
 	}
 
@@ -185,32 +191,37 @@ public class Tracker {
 	/**return a byte[] of the peerId we got*/
 	public byte[] getPeerId(){return this.peer_id.getBytes();}
 	
-	public void client_info(){
-		System.out.println("client info: ");
-		System.out.println("port number: "+ this.serverPort);
-		System.out.println("downloaded: " + this.torrentHandler.getBytesDownloaded());
-		System.out.println("total: "+this.torrentInfo.file_length);
-		
-		
-		//All of this code must be updated, pulled from above
-		//Need to add in the downloaded bytes
-		//need to add in the events
-		//need the interval, then need to make this into a thread
-		//need to make this send out various messages... use switch
-		String query = "announce?info_hash=" + ih_str + "&peer_id=" + this.peer_id + "&port=6881&left=" + this.torrentInfo.file_length + "&uploaded=0&downloaded=0";
-		URL urlobj;
-		
-		try{
-		urlobj = new URL(this.torrentInfo.announce_url, query);
-		HttpURLConnection uconnect = (HttpURLConnection) urlobj
-				.openConnection();
-		uconnect.setRequestMethod("GET");
-		}catch(Exception e){}
-		
-		// this.torrentInfo.
-	    // can implement serverSocket class 69 69
-		//implemented somewhere in the code about how much is downloaded 
-		//take in an argument for the port number which continues to listen and then implement with a server socket to get the info
+	
+	
+	public TorrentHandler getTorrentHandler(){
+		return this.torrentHandler;
 	}
+	class queryServer_thread implements Runnable{
+		
+		public void run() {
+			
+			long interval= 4; //need to change this to the interval from URl
+			
+			while(true){
+			
+				try {
+					queryServer();
+					Thread.sleep(interval);
+					
+				
+				
+				} catch (IOException | InterruptedException e) {
+					e.printStackTrace();
+				}
+		
+			}
+		}
+	
 
+
+	}
 }
+
+
+
+

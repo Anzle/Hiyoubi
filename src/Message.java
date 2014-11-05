@@ -135,5 +135,14 @@ public class Message {
 		
 		return msg.array();
 	}
-	
+	public static byte[] haveBuilder(int index) {
+
+		ByteBuffer msg = ByteBuffer.allocate(9);
+		
+		msg.putInt(5);
+		msg.put((byte) 4);
+		msg.putInt(index);
+		
+		return msg.array();
+	}
 }
