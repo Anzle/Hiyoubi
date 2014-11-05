@@ -17,6 +17,8 @@ public class Peer extends Thread {
 	private boolean peer_interested = false;
 	private boolean am_choking = false;
 	private boolean am_interested = false;
+	
+	private boolean pulse;
 
 	boolean[] bitfield;
 
@@ -36,6 +38,7 @@ public class Peer extends Thread {
 		this.torrentHandler = torrentHandler;
 		this.clientID = clientID;
 		this.bitfield = new boolean[this.torrentHandler.torrentInfo.piece_hashes.length];
+		pulse = false;
 	}
 
 	/**
@@ -52,6 +55,7 @@ public class Peer extends Thread {
 		this.torrentHandler = torrentHandler;
 		this.clientID = clientID;
 		bitfield = new boolean[this.torrentHandler.torrentInfo.piece_hashes.length];
+		pulse = false;
 	}
 
 	public boolean connect() {
@@ -74,6 +78,9 @@ public class Peer extends Thread {
 			System.err.println("The handshake with: " + ip + " failed.");
 			return false;
 		}
+		
+		//alive keeps track of whether this is still a valid torrent
+		pulse = true;
 		//Start the clock
 		keepAlive = new Thread(new KeepAlive());
 		keepAlive.start();
@@ -273,6 +280,8 @@ public class Peer extends Thread {
 			System.err.println("The handshake with: " + ip + " failed.");
 			return false;
 		}
+		//alive keeps track of whether this is still a valid peer
+		pulse = true;
 		//Start the clock
 		keepAlive = new Thread(new KeepAlive());
 		keepAlive.start();
@@ -427,6 +436,7 @@ public class Peer extends Thread {
 				//socket.close();
 			}catch (IOException e) {
 				System.err.println("Peer " + this.ip + ":" + this.port + " disconnected. " + e.getMessage());
+				pulse = false;
 			}
 		
 	}
@@ -456,7 +466,8 @@ public class Peer extends Thread {
 			from_peer.close();
 			socket.close();
 		} catch (IOException e) {
-			System.err.println("Closing peer:" + ip + " has somehow failed. ");
+			System.err.println("Closing peer:" + ip + " has somehow failed."+
+								" It was probably already dead :( ");
 		}
 		
 	}
@@ -476,6 +487,10 @@ public class Peer extends Thread {
 			
 		}
 		
+	}
+	public boolean hasPulse() {
+		// TODO Auto-generated method stub
+		return pulse;
 	}
 
 }

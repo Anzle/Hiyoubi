@@ -58,8 +58,7 @@ public class PeerManager {
 	public int getPort(){return port;}
 	
 	/**
-	 * @param flag 
-	 * @param the file to be saved to
+	*
 	 * */
 	public void download() {
 		if(peerList.isEmpty()){
@@ -84,11 +83,58 @@ public class PeerManager {
 		}
 	}
 	
+	/**
+	 * Disconnect all peers from the list
+	 */
 	public void disconnect(){
 		for( Peer p: peerList){
 			p.disconnect();
 			System.out.println("Disconnected from peer:" + p.ip);
+			remove(p);
 		}
+	}
+	
+	private void disconnect(Peer p){
+		p.disconnect();
+		remove(p);
+		System.out.println("Disconnected from peer:" + p.ip);
+	}
+	
+	/**
+	 * Add our peer to our peer list*/
+	private synchronized void add(Peer p){
+		//if(p instanceof Peer)
+			peerList.add((Peer)p);
+			p.start();
+			System.out.println("Established connection to peer: " + p.ip);
+	}
+	
+	/**
+	 * Check that the peer is contained within our peer list
+	 * @param p
+	 * @return
+	 */
+	private synchronized boolean contains(Object p){
+		if(p instanceof Peer)
+			return peerList.contains((Peer)p);
+		return false;
+	}
+	
+	/**
+	 * Check to see if the peer is still active/alive
+	 * @param p
+	 * @return
+	 */
+	private synchronized boolean checkPulse(Peer p){
+		return p.hasPulse()? true:false;
+	}
+	
+	/**
+	 * remove a peer from our Peer List
+	 * @param p
+	 */
+	private synchronized void remove(Peer p){
+		peerList.remove(p);
 	}
 	
 	/***
@@ -97,7 +143,9 @@ public class PeerManager {
 	 *
 	 */
 	
-	
+	/*
+	 * This thread checks for peers that we want to connect to!
+	 */
 	private class PeerListener implements Runnable{
 		
 		//This constructor calls super... just like an implicit one... so it does nothing
@@ -159,24 +207,11 @@ public class PeerManager {
 				}
 			}
 		}
-		
-		
-		/*To prevent memory leakage*/
-		private synchronized void add(Peer p){
-			//if(p instanceof Peer)
-				peerList.add((Peer)p);
-				p.start();
-				System.out.println("Established connection to peer: " + p.ip);
-		}
-		
-		private synchronized boolean contains(Object p){
-			if(p instanceof Peer)
-				return peerList.contains((Peer)p);
-			return false;
-		}
 	}
 
-	
+/*
+ * This Peer checks for incomming connections, ie, people trying to download from us	
+ */
 	private class ServerListener implements Runnable{
 		
 		public ServerListener(){super();}
@@ -219,6 +254,23 @@ public class PeerManager {
 		byte[] m = Message.haveBuilder(index);
 		for(Peer p : this.peerList){
 			p.sendMessage(m);
+		}
+	}
+	
+	
+	/*
+	 * This thread checks if our peers are still connected.
+	 * If not, it tosses them from the list
+	 */
+	class ConnectedPeers implements Runnable{
+		public void run(){
+			for(Peer p: peerList){
+				if(!checkPulse(p)){//if it has no pulse, it's dead
+					disconnect(p);
+				}
+					
+			}
+			
 		}
 	}
 	
