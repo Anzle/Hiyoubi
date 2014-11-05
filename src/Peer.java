@@ -332,20 +332,20 @@ public class Peer extends Thread {
 	 * Begin downloading from the Peer
 	 */
 	public void run() {
-		while (true){
+		while(pulse)	
 			interpertMessage();
-		}
+		
 	}
 
 	private void interpertMessage() {
 		try {
-			while (this.socket.isConnected()) {
+			//while (this.socket.isConnected()) {
 				int len = from_peer.readInt();
-				System.out.println("read init!");
-				System.out.println(len);
+				//System.out.println("read init!");
+				//System.out.println(len);
 				if (len > 0) {
 					byte id = this.from_peer.readByte();
-					System.out.println("messageid: " + ((int) (id)));
+					//System.out.println("messageid: " + ((int) (id)));
 					switch (id) {
 					case (byte) 0: // choke
 						this.peer_choking = true;
@@ -432,7 +432,7 @@ public class Peer extends Thread {
 					else
 						System.out.println("message length: " + len);
 				}
-			}
+			//}
 				//socket.close();
 			}catch (IOException e) {
 				System.err.println("Peer " + this.ip + ":" + this.port + " disconnected. " + e.getMessage());
@@ -460,6 +460,7 @@ public class Peer extends Thread {
 	 * End the communication with the Peer*/
 	public void disconnect(){
 		//disconnect our connections
+		pulse = false;
 		try {
 			to_peer.flush();
 			to_peer.close();
@@ -477,7 +478,7 @@ public class Peer extends Thread {
 
 		@Override
 		public void run() {
-			while(true){
+			while(pulse){
 				//12 seconds * nanosecond to second -> 10^9
 				if((System.nanoTime() - lastMessageSent)  > 120*Math.pow(10, 9)){
 					sendMessage(new byte[]{});

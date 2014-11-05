@@ -26,6 +26,9 @@ public class Tracker {
 	private TorrentHandler torrentHandler;
 	private int serverPort;
 	private String ih_str;
+	private HashMap peer_info;
+	private int minInterval = 120;
+	private String event=null;
 
 	public Tracker(TorrentInfo torrentInfo, TorrentHandler torrentHandler, int serverPort) {
 		this.torrentInfo = torrentInfo;
@@ -50,6 +53,23 @@ public class Tracker {
 		*/
 		
 	}
+	
+	public Tracker(TorrentInfo torrentInfo, TorrentHandler torrentHandler, int serverPort, String event) {
+		
+		this.torrentInfo = torrentInfo;
+		this.torrentHandler = torrentHandler;
+		this.serverPort = serverPort;
+		
+		StringBuilder sb = new StringBuilder();
+		Random random = new Random();
+		for (int i = 0; i < 20; i++) {
+		    char c = this.HEXCHARS[random.nextInt(this.HEXCHARS.length)];
+		    sb.append(c);
+		}
+		this.peer_id = sb.toString();
+		
+		this.event=event;
+	}
 
 	/**
 	 * Perform the HTTP Get Request from the Torrent
@@ -73,7 +93,33 @@ public class Tracker {
 
 		// String query = "announce?info_hash=" + ih_str + "&peer_id=" + host.getPeerID() + "&port=" + host.getPort() + "&left=" + torinfo.file_length + "&uploaded=0&downloaded=0";
 
-		String query = "announce?info_hash=" + ih_str + "&peer_id=" + this.peer_id + "&port="+this.serverPort+"&left=" + this.torrentInfo.file_length + "&uploaded="+0+ "&downloaded="+this.torrentHandler.getBytesDownloaded();
+		String query=null;
+		
+		//this makes sure that event is either started, completed, or stopped
+		
+		if(this.torrentHandler.getBytesDownloaded()==0){
+			this.event="started";
+		}else if(this.torrentInfo.file_length==0){
+			this.event="completed";
+		}else{
+			this.event="not done yet";  //this is checked in the next method and eliminated 
+		}
+		
+		
+		
+		if((this.event.equalsIgnoreCase("started")) || (this.event.equalsIgnoreCase("completed")) || (this.event.equalsIgnoreCase("stopped")) ){
+			//does nothing if its one of the strings stated above
+		}else{
+			this.event=null;
+		}
+		
+		
+		if(this.event==null){
+			query = "announce?info_hash=" + ih_str + "&peer_id=" + this.peer_id + "&port="+this.serverPort+"&left=" + this.torrentInfo.file_length + "&uploaded="+this.torrentHandler.getBytesUploaded()+ "&downloaded="+this.torrentHandler.getBytesDownloaded();
+		}else{
+			query = "announce?info_hash=" + ih_str + "&peer_id=" + this.peer_id + "&port="+this.serverPort+"&left=" + this.torrentInfo.file_length + "&uploaded="+this.torrentHandler.getBytesUploaded()+ "&downloaded="+this.torrentHandler.getBytesDownloaded()+ "&event="+this.event;
+		}
+		
 		URL urlobj;
 		
 		urlobj = new URL(this.torrentInfo.announce_url, query);
@@ -96,7 +142,7 @@ public class Tracker {
 
 		}
 		//System.out.println(peer_id +"\n" +response.toString());
-		return response.toString();
+		return response.toString(); //html response 
 	}
 
 	/**
@@ -113,7 +159,7 @@ public class Tracker {
 		}
 		HashMap results = null;
 		try {
-			Object o = Bencoder2.decode(response.getBytes());
+			Object o = Bencoder2.decode(response.getBytes()); //this is done
 			
 			if (o instanceof HashMap) {
 				results = (HashMap) o;
@@ -128,11 +174,19 @@ public class Tracker {
 			return null;
 		}
 
+		ByteBuffer i = ByteBuffer.wrap("min interval".getBytes());
+		
+		Object mini_o = results.get(i);
+		if(mini_o != null && mini_o instanceof Integer){
+			this.minInterval = (Integer) mini_o;
+		}
+		
 		ByteBuffer b = ByteBuffer.wrap("peers".getBytes());
 
 		ByteBuffer peer_ip_key = ByteBuffer.wrap("ip".getBytes());
 		ByteBuffer peer_port_key = ByteBuffer.wrap("port".getBytes());
 		ByteBuffer peer_id_key = ByteBuffer.wrap("peer id".getBytes());
+		
 
 		Object peer_list_o = results.get(b);
 
@@ -153,7 +207,7 @@ public class Tracker {
 				continue;
 			}
 
-			HashMap peer_info = (HashMap) peer_info_o;
+			peer_info = (HashMap) peer_info_o;
 
 			Object port_o = peer_info.get(peer_port_key);
 			Object ip_o = peer_info.get(peer_ip_key);
@@ -191,16 +245,69 @@ public class Tracker {
 	/**return a byte[] of the peerId we got*/
 	public byte[] getPeerId(){return this.peer_id.getBytes();}
 	
+	public void client_info(){
+		
+		
+		String one="client info: ";
+		String two="port number: "+ this.serverPort;
+		String three="downloaded: " + this.torrentHandler.getBytesDownloaded();
+		String four="uploaded: " + this.torrentHandler.getBytesUploaded();
+		String five= "total: "+this.torrentInfo.file_length;
+		
+		
+		//All of this code must be updated, pulled from above
+		//Need to add in the downloaded bytes
+		//need to add in the events
+		//need the interval, then need to make this into a thread
+		//need to make this send out various messages... use switch
+		
+		
+		String query = "announce?info_hash=" + ih_str + "&peer_id=" + this.peer_id + "&port=6881&left=" + this.torrentInfo.file_length + "&uploaded=0&downloaded=0";
+		URL urlobj;
+		
+		try{
+		urlobj = new URL(this.torrentInfo.announce_url, query);
+		HttpURLConnection uconnect = (HttpURLConnection) urlobj.openConnection();
+		uconnect.setDoOutput(true);
+		uconnect.setDoInput(true);
+		uconnect.setInstanceFollowRedirects(false);
+		uconnect.setRequestMethod("GET");
+		
+		DataOutputStream publish=new DataOutputStream(uconnect.getOutputStream());
+		publish.writeBytes(one);
+		publish.writeBytes(two);
+		publish.writeBytes(three);
+		publish.writeBytes(four);
+		publish.writeBytes(five);
+		
+		publish.flush();
+		publish.close();
+		uconnect.disconnect();
+		
+		}catch(Exception e){}
+		
+		// this.torrentInfo.
+	    // can implement serverSocket class 69 69
+		//implemented somewhere in the code about how much is downloaded 
+		//take in an argument for the port number which continues to listen and then implement with a server socket to get the info
 	
+	
+	
+	
+	}
 	
 	public TorrentHandler getTorrentHandler(){
 		return this.torrentHandler;
 	}
+	
+	/*
 	class queryServer_thread implements Runnable{
 		
 		public void run() {
 			
-			long interval= 4; //need to change this to the interval from URl
+			ByteBuffer peer_interval_key = ByteBuffer.wrap("interval".getBytes());
+			
+			long interval= peer_info; //need to change this to the interval from URl
 			
 			while(true){
 			
@@ -217,11 +324,6 @@ public class Tracker {
 			}
 		}
 	
-
-
 	}
+	*/
 }
-
-
-
-

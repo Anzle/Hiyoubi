@@ -20,6 +20,7 @@ public class PeerManager {
 	Tracker tracker;
 	Thread serverCheck;
 	Thread peerCheck;
+	Thread peerPulse;
 	boolean downloading;
 	/**The wait interval: set to 2 minutes*/
 	final int INTERVAL = 10000;//120000;
@@ -39,6 +40,10 @@ public class PeerManager {
 		peerCheck = new Thread(new PeerListener());
 		peerCheck.start();
 		
+		//peerPulse checks if a peer is still active (see documentation
+		peerPulse = new Thread(new PeerPulse());
+		peerPulse.start();
+		
 		try {
 				server = new ServerSocket(port);
 				serverCheck = new Thread(new ServerListener());
@@ -46,7 +51,8 @@ public class PeerManager {
 			} catch (IOException e) {
 				System.err.println("PeerManager's server has run into an issue and failed to initilize");
 			}
-
+		
+		
 			
 		
 	}
@@ -87,11 +93,12 @@ public class PeerManager {
 	 * Disconnect all peers from the list
 	 */
 	public void disconnect(){
-		for( Peer p: peerList){
+		for(Peer p: peerList){
 			p.disconnect();
 			System.out.println("Disconnected from peer:" + p.ip);
-			remove(p);
+			//remove(p);
 		}
+		peerList = null;
 	}
 	
 	private void disconnect(Peer p){
@@ -259,16 +266,32 @@ public class PeerManager {
 	
 	
 	/*
-	 * This thread checks if our peers are still connected.
+	 * This thread checks if our peers are still connected
 	 * If not, it tosses them from the list
+	 * This was implemented because after a bad peer disconnect
+	 * 	the peer remains in the peer list, making us unable to reconnect to
+	 *  that peer. 
+	 *  
+	 *  This will check if a peer is still connected and if not remove it from our peer list (trying to close
+	 *  connections to the sockets just incase somethign strange happened)
 	 */
-	class ConnectedPeers implements Runnable{
+	class PeerPulse implements Runnable{
 		public void run(){
-			for(Peer p: peerList){
-				if(!checkPulse(p)){//if it has no pulse, it's dead
-					disconnect(p);
+			while(true){
+				for(Peer p: peerList){
+					if(!checkPulse(p)){//if it has no pulse, it's dead
+						disconnect(p);
+					}
+						
 				}
-					
+				
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					System.err.println("Class PeerPulse sleep failure.");
+					//e.printStackTrace();
+				}
 			}
 			
 		}
