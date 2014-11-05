@@ -39,6 +39,7 @@ public class RUBTClient {
 		tfile = args[0];
 		sfile = args[1];
 		
+		flag = "";
 		if(args.length == 3){
 			if(args[2].equals("-i")){
 				System.out.print("Input IP: ");

@@ -1,5 +1,7 @@
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 
@@ -37,24 +39,46 @@ public class PeerManager {
 		th = this.tracker.getTorrentHandler();
 		th.setPeerManager(this);
 		
-		peerCheck = new Thread(new PeerListener());
-		peerCheck.start();
-		
-		//peerPulse checks if a peer is still active (see documentation
-		peerPulse = new Thread(new PeerPulse());
-		peerPulse.start();
-		
-		try {
-				server = new ServerSocket(port);
-				serverCheck = new Thread(new ServerListener());
-				serverCheck.start();
-			} catch (IOException e) {
-				System.err.println("PeerManager's server has run into an issue and failed to initilize");
-			}
-		
-		
+		if(flag.equals("")){
+			peerCheck = new Thread(new PeerListener());
+			peerCheck.start();
 			
-		
+			try {
+					server = new ServerSocket(port);
+					serverCheck = new Thread(new ServerListener());
+					serverCheck.start();
+				} catch (IOException e) {
+					System.err.println("PeerManager's server has run into an issue and failed to initilize");
+				}
+			
+			//peerPulse checks if a peer is still active (see documentation
+					peerPulse = new Thread(new PeerPulse());
+					peerPulse.start();
+					
+				
+			
+		}
+		//They did input a flag
+		else{
+			Socket s;
+			try {
+				s = new Socket(flag, port);
+			
+				Peer p = new Peer(s, th, tracker.getPeerId());
+					if(p.connect()){
+						add(p);
+						System.out.println("Downloading Connection from: " + p.ip);
+						p.download();
+						
+					}	
+				} catch (UnknownHostException e) {
+				// TODO Auto-generated catch block
+				System.err.println("There was a bad flag input. You should Exit");
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				System.err.println("There was a bad flag input. You should Exit");
+			}
+		}
 	}
 	
 	/**@return whether there are any peers downloading*/
@@ -186,14 +210,7 @@ public class PeerManager {
 						//System.out.println("Peer List contains:" + p);
 						continue;
 					}
-					else if(p.ip.equals(flag)){
-						if(p.connect()){
-							add(p);
-							System.out.println("Downloading Connection from: " + p.ip);
-							p.download();
-							
-						}
-					}
+
 					//for Phase 2, we only connect to these peers
 					else if(p.ip.equals("128.6.171.130") || p.ip.equals("128.6.171.131")){
 						if(p.connect()){
