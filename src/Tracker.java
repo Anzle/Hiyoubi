@@ -28,6 +28,7 @@ public class Tracker {
 	private String ih_str;
 	private HashMap peer_info;
 	private int minInterval = 120;
+	private String event=null;
 
 	public Tracker(TorrentInfo torrentInfo, TorrentHandler torrentHandler, int serverPort) {
 		this.torrentInfo = torrentInfo;
@@ -50,6 +51,26 @@ public class Tracker {
 			e.printStackTrace();
 		}
 		*/
+		
+	}
+	
+	public Tracker(TorrentInfo torrentInfo, TorrentHandler torrentHandler, int serverPort, String event) {
+		
+		this.torrentInfo = torrentInfo;
+		this.torrentHandler = torrentHandler;
+		this.serverPort = serverPort;
+		
+		StringBuilder sb = new StringBuilder();
+		Random random = new Random();
+		for (int i = 0; i < 20; i++) {
+		    char c = this.HEXCHARS[random.nextInt(this.HEXCHARS.length)];
+		    sb.append(c);
+		}
+		this.peer_id = sb.toString();
+		
+		this.event=event;
+		
+		
 		
 	}
 
@@ -75,7 +96,14 @@ public class Tracker {
 
 		// String query = "announce?info_hash=" + ih_str + "&peer_id=" + host.getPeerID() + "&port=" + host.getPort() + "&left=" + torinfo.file_length + "&uploaded=0&downloaded=0";
 
-		String query = "announce?info_hash=" + ih_str + "&peer_id=" + this.peer_id + "&port="+this.serverPort+"&left=" + this.torrentInfo.file_length + "&uploaded="+this.torrentHandler.getBytesUploaded()+ "&downloaded="+this.torrentHandler.getBytesDownloaded();
+		String query=null;
+		
+		if(this.event==null){
+			query = "announce?info_hash=" + ih_str + "&peer_id=" + this.peer_id + "&port="+this.serverPort+"&left=" + this.torrentInfo.file_length + "&uploaded="+this.torrentHandler.getBytesUploaded()+ "&downloaded="+this.torrentHandler.getBytesDownloaded();
+		}else{
+			query = "announce?info_hash=" + ih_str + "&peer_id=" + this.peer_id + "&port="+this.serverPort+"&left=" + this.torrentInfo.file_length + "&uploaded="+this.torrentHandler.getBytesUploaded()+ "&downloaded="+this.torrentHandler.getBytesDownloaded()+ "&event="+this.event;
+		}
+		
 		URL urlobj;
 		
 		urlobj = new URL(this.torrentInfo.announce_url, query);
