@@ -97,6 +97,16 @@ public class Tracker {
 		
 		//this makes sure that event is either started, completed, or stopped
 		
+		if(this.torrentHandler.getBytesDownloaded()==0){
+			this.event="started";
+		}else if(this.torrentInfo.file_length==0){
+			this.event="completed";
+		}else{
+			this.event="not done yet";  //this is checked in the next method and eliminated 
+		}
+		
+		
+		
 		if((this.event.equalsIgnoreCase("started")) || (this.event.equalsIgnoreCase("completed")) || (this.event.equalsIgnoreCase("stopped")) ){
 			//does nothing if its one of the strings stated above
 		}else{
